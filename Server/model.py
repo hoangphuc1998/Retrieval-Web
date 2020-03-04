@@ -97,6 +97,7 @@ def load_image_model(model_type, device):
     Output:
         - Pytorch image extraction model
     '''
+    # TODO: Add Densenet and others
     if model_type == 'resnet50':
         model = models.resnet50(pretrained = True).to(device)
     elif model_type == 'resnet101':
@@ -116,6 +117,7 @@ def load_text_model(model_type, pretrained, device):
     Output:
         - model and tokenizer
     '''
+    #TODO: Add RoBerta and others
     if model_type == 'bert':
         model = BertModel.from_pretrained(pretrained).to(device)
         model.eval()
