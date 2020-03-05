@@ -1,6 +1,8 @@
 from .dataset import ImageDataset, FeatureDataset
 from .model import load_image_model, load_text_model, load_transform_model, normalize
+import pickle
 import torch
+import pandas as pd
 
 def convert_image_to_feature(feature_model, transfrom_model, image_folder, save_folder, opt):
     pass
@@ -11,8 +13,15 @@ def load_feature(feature_folder, opt):
 
 
 def load_all_feature(feature_file, index_file, device):
+    '''
+    Load all image features and filenames
+    Input:
+        - feature_file (str): path to features tensor
+        - index_file (str): path to filenames pandas series (easier to retrie)
+    '''
     features = torch.load(feature_file).detach().to(device)
-    indices = torch.load(index_file).detach().to(device)
+    names_series = pd.Series(pd.read_csv(index_file, header=None, index_col=0))
+    return features, names_series
 
 
 def euclidean_dist(ref_feature, features):
@@ -31,7 +40,7 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
     return torch.topk(dists, k,  largest=False)
 
 
-def get_images_from_caption(caption, image_features, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50):
+def get_images_from_caption(caption, image_features, image_names, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50):
     '''
     Return distances and indices of k nearest images of caption
     '''
@@ -44,4 +53,9 @@ def get_images_from_caption(caption, image_features, text_model, text_tokenizer,
     text_feature = text_encoder(text_feature)
     # Normalize feature
     text_feature = normalize(text_feature).squeeze()
-    return k_nearest_neighbors(text_feature, image_features, dist_fn=cosine_dist, k=k)
+    # Get top k images
+    dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=cosine_dist, k=k)
+    # Get image filenames from indices
+    indices = indices.to('cpu').numpy()
+    filenames = image_names.iloc[indices].tolist()
+    return dists, filenames
