@@ -55,7 +55,7 @@ class NeuralNetwork(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-def load_transform_model(opt, image_encoder_path, text_encoder_path, device):
+def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''):
     '''
     Load image and text encoder model
     Input:
@@ -66,13 +66,6 @@ def load_transform_model(opt, image_encoder_path, text_encoder_path, device):
     Output: image_encoder, text_encoder
     '''
     # Initialize models
-    image_encoder = NeuralNetwork(input_dim=opt['image_dim'], 
-                              output_dim=opt['common_dim'], 
-                              hidden_units=opt['image_encoder_hidden'], 
-                              hidden_activation=opt['image_encoder_hidden_activation'], 
-                              output_activation=opt['image_encoder_output_activation'],
-                              use_dropout=opt['use_dropout']).to(device)
-
     text_encoder = NeuralNetwork(input_dim=opt['text_dim'], 
                                 output_dim=opt['common_dim'], 
                                 hidden_units=opt['text_encoder_hidden'], 
@@ -81,12 +74,21 @@ def load_transform_model(opt, image_encoder_path, text_encoder_path, device):
                                 use_dropout=opt['use_dropout']).to(device)
     
     # Load models
-    image_encoder.load_state_dict(torch.load(image_encoder_path))
     text_encoder.load_state_dict(torch.load(text_encoder_path))
     # Change to eval mode
-    image_encoder.eval()
     text_encoder.eval()
-    return image_encoder, text_encoder
+    # Load image encoder model
+    if len(image_encoder_path) > 0:
+        image_encoder = NeuralNetwork(input_dim=opt['image_dim'], 
+                                output_dim=opt['common_dim'], 
+                                hidden_units=opt['image_encoder_hidden'], 
+                                hidden_activation=opt['image_encoder_hidden_activation'], 
+                                output_activation=opt['image_encoder_output_activation'],
+                                use_dropout=opt['use_dropout']).to(device)
+        image_encoder.load_state_dict(torch.load(image_encoder_path))
+        image_encoder.eval()
+        return image_encoder, text_encoder
+    return text_encoder
 
 def load_image_model(model_type, device):
     '''
