@@ -12,5 +12,5 @@ def send_image_retrieval_request(caption, dist_func='cosine', k=10):
     return images, dists
 
 def home(request):
-    images, dists = send_image_retrieval_request('toilet')
-    return HttpResponse(images[0])
+    #images, dists = send_image_retrieval_request('toilet')
+    return render(request, 'client_home.html', {'images': range(10)})

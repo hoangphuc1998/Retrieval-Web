@@ -1,0 +1,51 @@
+{% load static %}
+{% load widget_tweaks %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Image Retrieval</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+
+<body>
+    <!-- Navigation bar-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">Image Retrieval</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Input caption-->
+        <form>
+            <div class="form-group">
+                <label for="query">Query sentence</label>
+                {% render_field field class="form-control" %}
+                <input type="text" class="form-control mt-1" id="queryInput"
+                    placeholder="Enter query to retrieve images">
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success mt-3 center-block">Find</button>
+                </div>
+            </div>
+        </form>
+
+        <!--Image grid view-->
+        <div class="row">
+            {% for i in images %}
+            <!--Grid column-->
+            <div class="col-lg-4 col-md-12 mb-4">
+
+                <img src="http://mdbootstrap.com/img/Photos/Lightbox/Original/img%20(58).jpg" class="img-fluid mb-4" alt="">
+
+            </div>
+            {% endfor %}
+
+        </div>
+        <!--Grid row-->
+    </div>
+</body>
+
+</html>
