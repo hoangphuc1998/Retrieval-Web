@@ -19,7 +19,7 @@ def load_all_feature(feature_file, index_file, device):
         - feature_file (str): path to features tensor
         - index_file (str): path to filenames pandas series (easier to retrie)
     '''
-    features = torch.load(feature_file).detach().to(device)
+    features = torch.load(feature_file,map_location=torch.device('cpu')).detach().to(device)
     names_series = pd.Series(pd.read_csv(index_file, header=None, index_col=0).iloc[:,0])
     return features, names_series
 

@@ -9,11 +9,11 @@ import base64
 # Create your views here.
 
 # Global variables
-image_feature_path = '/home/hoangphuc/Documents/COCO_val_image_transform.pth'
-filename_path = '/home/hoangphuc/Documents/COCO_filenames.csv'
-option_dict_path = '/home/hoangphuc/Documents/options.pkl'
-text_encoder_path = '/home/hoangphuc/Documents/DualEncoding_Ver2/best/text_encoder.pth'
-image_folder = '/home/hoangphuc/Documents/val2014'
+image_feature_path = '/home/lehoanganh298/Documents/COCO_val_image_transform.pth'
+filename_path = '/home/lehoanganh298/Documents/COCO_filenames.csv'
+option_dict_path = '/home/lehoanganh298/Documents/options.pkl'
+text_encoder_path = '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth'
+image_folder = '/home/lehoanganh298/Documents/val2014'
 
 image_features = None
 image_names = None

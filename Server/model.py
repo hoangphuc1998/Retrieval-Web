@@ -74,7 +74,7 @@ def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''
                                 use_dropout=opt['use_dropout']).to(device)
     
     # Load models
-    text_encoder.load_state_dict(torch.load(text_encoder_path))
+    text_encoder.load_state_dict(torch.load(text_encoder_path,map_location=torch.device('cpu')))
     # Change to eval mode
     text_encoder.eval()
     # Load image encoder model
