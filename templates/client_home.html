@@ -1,5 +1,4 @@
 {% load static %}
-{% load widget_tweaks %}
 
 <!DOCTYPE html>
 <html>
@@ -20,31 +19,18 @@
 
     <div class="container">
         <!-- Input caption-->
-        <form>
+        <form action="/client/query" method="GET">
             <div class="form-group">
-                <label for="query">Query sentence</label>
-                {% render_field field class="form-control" %}
                 <input type="text" class="form-control mt-1" id="queryInput"
-                    placeholder="Enter query to retrieve images">
+                    placeholder="Enter query to find images" name="caption" value="{{caption}}">
                 <div class="text-center">
                     <button type="submit" class="btn btn-success mt-3 center-block">Find</button>
                 </div>
             </div>
         </form>
 
-        <!--Image grid view-->
-        <div class="row">
-            {% for i in images %}
-            <!--Grid column-->
-            <div class="col-lg-4 col-md-12 mb-4">
-
-                <img src="http://mdbootstrap.com/img/Photos/Lightbox/Original/img%20(58).jpg" class="img-fluid mb-4" alt="">
-
-            </div>
-            {% endfor %}
-
-        </div>
-        <!--Grid row-->
+        {% block image_grid %}
+        {% endblock %}
     </div>
 </body>
 

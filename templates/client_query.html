@@ -1,0 +1,17 @@
+{% extends 'client_home.html' %}
+
+{% block image_grid %}
+<!--Image grid view-->
+<div class="row">
+    {% for image in images %}
+    <!--Grid column-->
+    <div class="col-lg-4 col-md-12 mb-4">
+
+        <img src="data:image/png;base64, {{image}}" class="img-fluid mb-4" alt="">
+
+    </div>
+    {% endfor %}
+
+</div>
+<!--Grid row-->
+{% endblock %}
