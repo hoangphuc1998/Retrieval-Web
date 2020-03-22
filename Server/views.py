@@ -15,8 +15,12 @@ option_dict_path = '/home/lehoanganh298/Documents/options.pkl'
 text_encoder_path = '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth'
 image_folder = '/home/lehoanganh298/Documents/val2014'
 
-image_features = None
-image_names = None
+# image_feature_folder = '/media/hoangphuc/Data/LSC_transform'
+# filename_folder = '/media/hoangphuc/Data/LSC_filename'
+# option_dict_path = '/home/hoangphuc/Documents/options.pkl'
+# text_encoder_path = '/home/hoangphuc/Documents/DualEncoding_Ver2/best/text_encoder.pth'
+# image_folder = '/media/hoangphuc/Data/LSC2020/lsc2020/Volumes/Samsung_T5/DATASETS/LSC2020'
+
 text_model = None
 text_tokenizer = None
 text_encoder = None
@@ -34,8 +38,8 @@ def home(request):
     text_model, text_tokenizer = load_text_model(
         opt['text_model_type'], opt['text_model_pretrained'], device)
     text_encoder = load_transform_model(opt, text_encoder_path, device)
-    image_features, image_names = load_all_feature(
-        image_feature_path, filename_path, device)
+    # image_features, image_names = load_all_feature(
+    #     image_feature_path, filename_path, device)
     return HttpResponse('Setup done!')
 
 def get_images(request, caption, dist_func, k, start_from):
@@ -45,8 +49,8 @@ def get_images(request, caption, dist_func, k, start_from):
     else:
         dist_func = euclidean_dist
     dists, filenames = get_images_from_caption(caption=caption,
-                                              image_features=image_features,
-                                              image_names=image_names,
+                                              image_features_folder=image_feature_folder,
+                                              image_names_folder=filename_folder,
                                               text_model=text_model,
                                               text_tokenizer=text_tokenizer,
                                               text_encoder=text_encoder,
@@ -60,4 +64,5 @@ def get_images(request, caption, dist_func, k, start_from):
         with open(os.path.join(image_folder, filename), 'rb') as f:
             response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
     response_data['dists'] = dists.tolist()
+    print(dists)
     return JsonResponse(response_data)
