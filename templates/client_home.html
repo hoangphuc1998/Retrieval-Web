@@ -2,39 +2,49 @@
 
 <!DOCTYPE html>
 <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Image Retrieval</title>
+        <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    </head>
 
-<head>
-    <meta charset="utf-8">
-    <title>Image Retrieval</title>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-</head>
-
-<body>
-    <!-- Navigation bar-->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">Image Retrieval</a>
-        </div>
-    </nav>
-
-    <div class="container" id="form-and-grid">
-        <!-- Input caption-->
-        <form action="/query" method="GET">
-            <div class="form-group">
-                <input type="text" class="form-control mt-1" id="queryInput"
-                    placeholder="Enter query to find images" name="caption" value="{{caption}}">
-                <div class="text-center">
-                    <button id="find-btn" type="submit" class="btn btn-success mt-3 center-block">Find</button>
-                </div>
+    <body>
+        <!-- Navigation bar-->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'home' %}">Image Retrieval</a>
             </div>
-        </form>
+        </nav>
 
-        {% block image_grid %}
-        {% endblock %}
-    </div>
-    <div id='next'></div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-    <script src="{% static 'js/script.js' %}"></script>
-</body>
 
+        <div class="container" id="form-and-grid">
+            <!-- Input caption-->
+            <form action="/query" method="GET" class="mt-2 mb-3">
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="inputState">Dataset</label>
+                        <select id="dataset-combobox" class="form-control" name="dataset">
+                            <option value="COCO">COCO</option>
+                            <option value="LSC">LSC</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-8">
+                        <label for="inputCity">Query</label>
+                        <input type="text" class="form-control" id="queryInput" placeholder="Enter query to find images"
+                            name="caption" value="{{caption}}">
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="find-btn" type="submit" class="btn btn-success">Find</button>
+                </div>
+            </form>
+
+            {% block image_grid %}
+            {% endblock %}
+        </div>
+        <div id='next'></div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+        <script src="{% static 'js/script.js' %}"></script>
+    </body>
 </html>
