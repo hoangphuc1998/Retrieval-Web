@@ -18,6 +18,7 @@ $(window).scroll(function() {
         if($(window).scrollTop() >= $(document).height() - $(window).height()-30 && caption.length>0) {
                 console.log('load more')
                 loading_content=true
+                $('#next').html('<p class="h3 text-center">Loading more...</p>')
                 dataset = $('#dataset-combobox option:selected').val()
                 $.get('http://127.0.0.1:8000/server/'+caption+'/'+dataset+'/cosine/10/'+start_from, function(ketqua) {
                     let html_string=''
@@ -28,6 +29,7 @@ $(window).scroll(function() {
                     $('.row').append(html_string);
                     loading_content=false
                     start_from+=10
+                    $('#next').html('')
                     console.log('done loading')
                 });
         }
