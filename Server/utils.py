@@ -43,8 +43,38 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 stored_sorted_indices = dict()
 stored_dists = dict()
 
-<<<<<<< HEAD
-def get_images_from_caption(caption, image_features, image_names, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50,start_from=0):
+
+# def get_images_from_caption(caption, image_features, image_names, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50,start_from=0):
+#     '''
+#     Return distances and indices of k nearest images of caption
+#     '''
+#     if caption not in stored_sorted_indices:
+#         print('Calculating for caption: ',caption)
+#         # Convert to token
+#         input_ids = torch.tensor(
+#             [text_tokenizer.encode(caption, add_special_tokens=True)]).to(device)
+#         # Use bert-like model to encode (and normalize)
+#         text_feature = normalize(text_model(input_ids)[0].mean(1))
+#         # Transform to common space
+#         text_feature = text_encoder(text_feature)
+#         # Normalize feature
+#         text_feature = normalize(text_feature).squeeze()
+
+#         dists = dist_func(text_feature, image_features)
+#         sorted_indices = torch.argsort(dists,descending=False)
+        
+#         stored_sorted_indices[caption]=sorted_indices
+#         stored_dists[caption]=dists
+
+#     indices = stored_sorted_indices[caption][start_from:start_from+k]
+#     dists = stored_dists[caption][indices]
+
+#     # Get image filenames from indices
+#     indices = indices.to('cpu').numpy()
+#     filenames = image_names.iloc[indices].tolist()
+#     return dists, filenames
+
+def get_images_from_caption(caption, image_features_folder, image_names_folder, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50):
     '''
     Return distances and indices of k nearest images of caption
     '''
@@ -60,44 +90,27 @@ def get_images_from_caption(caption, image_features, image_names, text_model, te
         # Normalize feature
         text_feature = normalize(text_feature).squeeze()
 
-        dists = dist_func(text_feature, image_features)
+        # Iterate throgh all features
+        dists = []
+        names_series = []
+        for feature_file in os.listdir(image_features_folder):
+            name_file = os.path.join(image_names_folder, os.path.splitext(feature_file)[0] + '.csv')
+            feature_file = os.path.join(image_features_folder, feature_file)
+            image_features, filenames = load_all_feature(feature_file, name_file, device)
+            dists.append(dist_func(text_feature, image_features))
+            names_series.append(filenames)
+        dists = torch.cat(dists, dim=0)
+        image_names = pd.concat(names_series, ignore_index=True)
+        # Get top k images
+        #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
         sorted_indices = torch.argsort(dists,descending=False)
-        
+            
         stored_sorted_indices[caption]=sorted_indices
         stored_dists[caption]=dists
 
     indices = stored_sorted_indices[caption][start_from:start_from+k]
     dists = stored_dists[caption][indices]
-=======
-def get_images_from_caption(caption, image_features_folder, image_names_folder, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50):
-    '''
-    Return distances and indices of k nearest images of caption
-    '''
-    # Convert to token
-    input_ids = torch.tensor(
-        [text_tokenizer.encode(caption, add_special_tokens=True)]).to(device)
-    # Use bert-like model to encode (and normalize)
-    text_feature = normalize(text_model(input_ids)[0].mean(1))
-    # Transform to common space
-    text_feature = text_encoder(text_feature)
-    # Normalize feature
-    text_feature = normalize(text_feature).squeeze()
 
-    # Iterate throgh all features
-    dists = []
-    names_series = []
-    for feature_file in os.listdir(image_features_folder):
-        name_file = os.path.join(image_names_folder, os.path.splitext(feature_file)[0] + '.csv')
-        feature_file = os.path.join(image_features_folder, feature_file)
-        image_features, filenames = load_all_feature(feature_file, name_file, device)
-        dists.append(dist_func(text_feature, image_features))
-        names_series.append(filenames)
-    dists = torch.cat(dists, dim=0)
-    image_names = pd.concat(names_series, ignore_index=True)
-    # Get top k images
-    #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
-    dists, indices = torch.topk(dists, k, largest=False)
->>>>>>> master
     # Get image filenames from indices
     indices = indices.to('cpu').numpy()
     filenames = image_names.iloc[indices].tolist()
