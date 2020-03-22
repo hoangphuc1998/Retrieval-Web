@@ -39,22 +39,33 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
     dists = dist_fn(ref_feature, features)
     return torch.topk(dists, k,  largest=False)
 
+stored_sorted_indices = dict()
+stored_dists = dict()
 
-def get_images_from_caption(caption, image_features, image_names, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50):
+def get_images_from_caption(caption, image_features, image_names, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50,start_from=0):
     '''
     Return distances and indices of k nearest images of caption
     '''
-    # Convert to token
-    input_ids = torch.tensor(
-        [text_tokenizer.encode(caption, add_special_tokens=True)]).to(device)
-    # Use bert-like model to encode (and normalize)
-    text_feature = normalize(text_model(input_ids)[0].mean(1))
-    # Transform to common space
-    text_feature = text_encoder(text_feature)
-    # Normalize feature
-    text_feature = normalize(text_feature).squeeze()
-    # Get top k images
-    dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=cosine_dist, k=k)
+    if caption not in stored_sorted_indices:
+        print('Calculating for caption: ',caption)
+        # Convert to token
+        input_ids = torch.tensor(
+            [text_tokenizer.encode(caption, add_special_tokens=True)]).to(device)
+        # Use bert-like model to encode (and normalize)
+        text_feature = normalize(text_model(input_ids)[0].mean(1))
+        # Transform to common space
+        text_feature = text_encoder(text_feature)
+        # Normalize feature
+        text_feature = normalize(text_feature).squeeze()
+
+        dists = dist_func(text_feature, image_features)
+        sorted_indices = torch.argsort(dists,descending=False)
+        
+        stored_sorted_indices[caption]=sorted_indices
+        stored_dists[caption]=dists
+
+    indices = stored_sorted_indices[caption][start_from:start_from+k]
+    dists = stored_dists[caption][indices]
     # Get image filenames from indices
     indices = indices.to('cpu').numpy()
     filenames = image_names.iloc[indices].tolist()

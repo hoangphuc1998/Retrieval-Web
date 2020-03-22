@@ -38,7 +38,7 @@ def home(request):
         image_feature_path, filename_path, device)
     return HttpResponse('Setup done!')
 
-def get_images(request, caption, dist_func, k):
+def get_images(request, caption, dist_func, k, start_from):
     global text_model, text_tokenizer, text_encoder, image_features, image_names
     if dist_func == 'cosine':
         dist_func = cosine_dist
@@ -52,7 +52,7 @@ def get_images(request, caption, dist_func, k):
                                               text_encoder=text_encoder,
                                               device=device,
                                               dist_func=dist_func,
-                                              k=k)
+                                              k=k, start_from=start_from)
     response_data = dict()
     response_data['image'] = []
     #TODO: Add different image dataset

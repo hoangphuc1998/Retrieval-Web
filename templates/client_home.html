@@ -17,14 +17,14 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container" id="form-and-grid">
         <!-- Input caption-->
         <form action="/client/query" method="GET">
             <div class="form-group">
                 <input type="text" class="form-control mt-1" id="queryInput"
                     placeholder="Enter query to find images" name="caption" value="{{caption}}">
                 <div class="text-center">
-                    <button type="submit" class="btn btn-success mt-3 center-block">Find</button>
+                    <button id="find-btn" type="submit" class="btn btn-success mt-3 center-block">Find</button>
                 </div>
             </div>
         </form>
@@ -32,6 +32,9 @@
         {% block image_grid %}
         {% endblock %}
     </div>
+    <div id='next'></div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="{% static 'js/script.js' %}"></script>
 </body>
 
 </html>
