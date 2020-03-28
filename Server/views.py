@@ -11,18 +11,20 @@ import base64
 # Global variables
 path = {    
     'COCO':{
-        'image_feature_folder' : '/home/lehoanganh298/Documents/COCO_val_image_transform',
-        'filename_folder' : '/home/lehoanganh298/Documents/COCO_filename',
-        'option_dict_path' : '/home/lehoanganh298/Documents/options.pkl',
-        'text_encoder_path' : '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth',
-        'image_folder' : '/home/lehoanganh298/Documents/val2014',
+        'image_feature_folder' : '/media/hoangphuc/Data/COCO_val_transform',
+        'filename_folder' : '/media/hoangphuc/Data/COCO_filename',
+        'option_dict_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/options.pkl',
+        'text_encoder_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/text_encoder.pth',
+        'bert_model_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/bert_model.pth',
+        'image_folder' : '/home/hoangphuc/Documents',
     },
     'LSC': {
-        'image_feature_folder' : '/home/lehoanganh298/Documents/LSC_transform',
-        'filename_folder' : '/home/lehoanganh298/Documents/LSC_filename',
-        'option_dict_path' : '/home/lehoanganh298/Documents/options.pkl',
-        'text_encoder_path' : '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth',
-        'image_folder' : '/home/lehoanganh298/Projects/Volumes/Samsung_T5/DATASETS/LSC2020',
+        'image_feature_folder' : '/media/hoangphuc/Data/LSC_transform',
+        'filename_folder' : '//media/hoangphuc/Data/LSC_filename',
+        'option_dict_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/options.pkl',
+        'text_encoder_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/text_encoder.pth',
+        'bert_model_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/bert_model.pth',
+        'image_folder' : '/media/hoangphuc/Data/LSC2020/lsc2020/Volumes/Samsung_T5/DATASETS/LSC2020/',
     }
 }
 text_model = None
@@ -39,8 +41,9 @@ def home(request):
     global text_model, text_tokenizer, text_encoder, image_features, image_names
     with open(path['COCO']['option_dict_path'], 'rb') as f:
         opt = pickle.load(f)
+    opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
-        opt['text_model_type'], opt['text_model_pretrained'], device)
+        opt['text_model_type'], opt['text_model_pretrained'], device, path['COCO']['bert_model_path'])
     text_encoder = load_transform_model(opt, path['COCO']['text_encoder_path'], device)
     # image_features, image_names = load_all_feature(
     #     image_feature_path, filename_path, device)

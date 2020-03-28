@@ -18,39 +18,43 @@ def normalize(X):
     std = torch.std(X, dim=1, keepdim=True)
     return (X - mean) / std
 
+def l2norm(X):
+    """L2-normalize columns of X
+    """
+    norm = torch.pow(X, 2).sum(dim=1, keepdim=True).sqrt()
+    X = torch.div(X, norm)
+    return X
 
 class NeuralNetwork(nn.Module):
-    '''
-    Transform neural net
-    '''
-    def __init__(self, input_dim, output_dim, hidden_units, hidden_activation='relu', output_activation='relu', use_dropout=False):
+    def __init__(self, input_dim, output_dim, hidden_units, hidden_activation='relu', output_activation='relu', use_dropout = False, use_batchnorm=False):
         super().__init__()
         self.network = nn.Sequential()
         hidden_units = [input_dim] + hidden_units
         self.use_dropout = use_dropout
-
+        self.use_batchnorm = use_batchnorm
+        
         for i in range(len(hidden_units) - 1):
-            self.network.add_module(
-                "dense_" + str(i), nn.Linear(hidden_units[i], hidden_units[i+1]))
+            self.network.add_module("dense_" + str(i), nn.Linear(hidden_units[i], hidden_units[i+1]))
             if hidden_activation == 'relu':
-                self.network.add_module("activation_" + str(i), nn.ReLU())
+              self.network.add_module("activation_" + str(i), nn.ReLU())
             elif hidden_activation == 'sigmoid':
-                self.network.add_module("activation_" + str(i), nn.Sigmoid())
+              self.network.add_module("activation_" + str(i), nn.Sigmoid())
             elif hidden_activation == 'tanh':
-                self.network.add_module("activation_" + str(i), nn.Tanh())
-
+              self.network.add_module("activation_" + str(i), nn.Tanh())
+            if self.use_batchnorm:
+              self.network.add_module("batchnorm_" + str(i), nn.BatchNorm1d(hidden_units[i+1]))
+        
         # Dropout with 20% probability
         if self.use_dropout:
-            self.network.add_module("dropout", nn.Dropout(0.2))
+          self.network.add_module("dropout", nn.Dropout(0.2))
 
-        self.network.add_module(
-            "output", nn.Linear(hidden_units[-1], output_dim))
+        self.network.add_module("output", nn.Linear(hidden_units[-1], output_dim))
         if output_activation == 'relu':
-            self.network.add_module("activation_out", nn.ReLU())
+          self.network.add_module("activation_out", nn.ReLU())
         elif output_activation == 'sigmoid':
-            self.network.add_module("activation_out", nn.Sigmoid())
+          self.network.add_module("activation_out", nn.Sigmoid())
         elif output_activation == 'tanh':
-            self.network.add_module("activation_out", nn.Tanh())
+          self.network.add_module("activation_out", nn.Tanh())
 
     def forward(self, x):
         return self.network(x)
@@ -67,25 +71,27 @@ def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''
     '''
     # Initialize models
     text_encoder = NeuralNetwork(input_dim=opt['text_dim'], 
-                                output_dim=opt['common_dim'], 
-                                hidden_units=opt['text_encoder_hidden'], 
-                                hidden_activation=opt['text_encoder_hidden_activation'], 
-                                output_activation=opt['text_encoder_output_activation'],
-                                use_dropout=opt['use_dropout']).to(device)
+                              output_dim=opt['common_dim'], 
+                              hidden_units=opt['text_encoder_hidden'], 
+                              hidden_activation=opt['text_encoder_hidden_activation'], 
+                              output_activation=opt['text_encoder_output_activation'],
+                              use_dropout=opt['use_dropout'],
+                              use_batchnorm=opt['use_batchnorm']).to(device)
     
     # Load models
-    text_encoder.load_state_dict(torch.load(text_encoder_path,map_location=torch.device('cpu')))
+    text_encoder.load_state_dict(torch.load(text_encoder_path,map_location=device))
     # Change to eval mode
     text_encoder.eval()
     # Load image encoder model
     if len(image_encoder_path) > 0:
         image_encoder = NeuralNetwork(input_dim=opt['image_dim'], 
-                                output_dim=opt['common_dim'], 
-                                hidden_units=opt['image_encoder_hidden'], 
-                                hidden_activation=opt['image_encoder_hidden_activation'], 
-                                output_activation=opt['image_encoder_output_activation'],
-                                use_dropout=opt['use_dropout']).to(device)
-        image_encoder.load_state_dict(torch.load(image_encoder_path))
+                              output_dim=opt['common_dim'], 
+                              hidden_units=opt['image_encoder_hidden'], 
+                              hidden_activation=opt['image_encoder_hidden_activation'], 
+                              output_activation=opt['image_encoder_output_activation'],
+                              use_dropout=opt['use_dropout'],
+                              use_batchnorm=opt['use_batchnorm']).to(device)
+        image_encoder.load_state_dict(torch.load(image_encoder_path, map_location=device))
         image_encoder.eval()
         return image_encoder, text_encoder
     return text_encoder
@@ -109,7 +115,7 @@ def load_image_model(model_type, device):
     model = Sequential(*list(model.children())[:-1])
     model.eval()
 
-def load_text_model(model_type, pretrained, device):
+def load_text_model(model_type, pretrained, device, model_path=''):
     '''
     Load model to extract feature from text
     Input:
@@ -122,6 +128,8 @@ def load_text_model(model_type, pretrained, device):
     #TODO: Add RoBerta and others
     if model_type == 'bert':
         model = BertModel.from_pretrained(pretrained).to(device)
+        if len(model_path)>0:
+            model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         tokenizer = BertTokenizer.from_pretrained(pretrained)
         return model, tokenizer
