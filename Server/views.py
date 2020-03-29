@@ -15,14 +15,20 @@ text_encoder_path='/home/lehoanganh298/Projects/models/DualEncoding/DualEncoding
 
 dataset_path = {    
     'COCO':{
-        'image_feature_folder' : '/home/lehoanganh298/Projects/datasets/COCO/COCO_val_image_transform',
-        'filename_folder' : '/home/lehoanganh298/Projects/datasets/COCO/COCO_filename',
-        'image_folder' : '/home/lehoanganh298/Projects/datasets/COCO/val2014',
+        'image_feature_folder' : '/media/hoangphuc/Data/COCO_val_transform',
+        'filename_folder' : '/media/hoangphuc/Data/COCO_filename',
+        'option_dict_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/options.pkl',
+        'text_encoder_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/text_encoder.pth',
+        'bert_model_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/bert_model.pth',
+        'image_folder' : '/home/hoangphuc/Documents',
     },
     'LSC': {
-        'image_feature_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/LSC_transform',
-        'filename_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/LSC_filename',
-        'image_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/Volumes/Samsung_T5/DATASETS/LSC2020',
+        'image_feature_folder' : '/media/hoangphuc/Data/LSC_transform',
+        'filename_folder' : '//media/hoangphuc/Data/LSC_filename',
+        'option_dict_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/options.pkl',
+        'text_encoder_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/text_encoder.pth',
+        'bert_model_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/bert_model.pth',
+        'image_folder' : '/media/hoangphuc/Data/LSC2020/lsc2020/Volumes/Samsung_T5/DATASETS/LSC2020/',
     }
 }
 text_model = None
@@ -39,9 +45,15 @@ def home(request):
     global text_model, text_tokenizer, text_encoder, image_features, image_names
     with open(option_dict_path, 'rb') as f:
         opt = pickle.load(f)
+    opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
+<<<<<<< HEAD
         opt['text_model_type'], opt['text_model_pretrained'], device)
     text_encoder = load_transform_model(opt, text_encoder_path, device)
+=======
+        opt['text_model_type'], opt['text_model_pretrained'], device, path['COCO']['bert_model_path'])
+    text_encoder = load_transform_model(opt, path['COCO']['text_encoder_path'], device)
+>>>>>>> 35464302cb96819961c805bc3c3ec4a71a03a223
     # image_features, image_names = load_all_feature(
     #     image_feature_path, filename_path, device)
     return HttpResponse('Setup done!')

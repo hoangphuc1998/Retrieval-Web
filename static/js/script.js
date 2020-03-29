@@ -20,7 +20,7 @@ $(window).scroll(function() {
                 loading_content=true
                 $('#next').html('<p class="h3 text-center">Loading more...</p>')
                 dataset = $('#dataset-combobox option:selected').val()
-                $.get('http://127.0.0.1:8000/server/'+caption+'/'+dataset+'/cosine/10/'+start_from, function(ketqua) {
+                $.get('http://e7f15a7b.ngrok.io/server/'+caption+'/'+dataset+'/cosine/10/'+start_from, function(ketqua) {
                     let html_string=''
                     for (let i=0;i<ketqua.image.length;i++) {
                         html_string+='<div class="col-lg-4 col-md-12 mb-4"><img src="data:image/png;base64, ' +ketqua.image[i]+'" class="img-fluid mb-4" alt=""></div>'
