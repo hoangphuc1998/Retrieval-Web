@@ -9,10 +9,6 @@ import base64
 # Create your views here.
 
 # Global variables
-
-option_dict_path='/home/lehoanganh298/Projects/models/DualEncoding/options.pkl'
-text_encoder_path='/home/lehoanganh298/Projects/models/DualEncoding/DualEncoding_Ver2/best/text_encoder.pth'
-
 path = {    
     'COCO':{
         'image_feature_folder' : '/home/datasets/COCO_val_transform',
@@ -43,7 +39,7 @@ def home(request):
     Load all model and features to memory
     '''
     global text_model, text_tokenizer, text_encoder, image_features, image_names
-    with open(option_dict_path, 'rb') as f:
+    with open(path['COCO']['option_dict_path'], 'rb') as f:
         opt = pickle.load(f)
     opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
