@@ -11,12 +11,12 @@ import base64
 # Global variables
 path = {    
     'COCO':{
-        'image_feature_folder' : '/media/hoangphuc/Data/COCO_val_transform',
-        'filename_folder' : '/media/hoangphuc/Data/COCO_filename',
-        'option_dict_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/options.pkl',
-        'text_encoder_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/text_encoder.pth',
-        'bert_model_path' : '/home/hoangphuc/Documents/DualEncoding_Ver7/best/bert_model.pth',
-        'image_folder' : '/home/hoangphuc/Documents',
+        'image_feature_folder' : '/home/datasets/COCO_val_transform',
+        'filename_folder' : '/home/datasets/COCO_filename',
+        'option_dict_path' : '/home/models/options.pkl',
+        'text_encoder_path' : '/home/models/text_encoder.pth',
+        'bert_model_path' : '/home/models/bert_model.pth',
+        'image_folder' : '/home/datasets/COCO_images',
     },
     'LSC': {
         'image_feature_folder' : '/media/hoangphuc/Data/LSC_transform',
