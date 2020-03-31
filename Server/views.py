@@ -13,7 +13,7 @@ import base64
 option_dict_path='/home/lehoanganh298/Projects/models/DualEncoding/options.pkl'
 text_encoder_path='/home/lehoanganh298/Projects/models/DualEncoding/DualEncoding_Ver2/best/text_encoder.pth'
 
-dataset_path = {    
+path = {    
     'COCO':{
         'image_feature_folder' : '/home/datasets/COCO_val_transform',
         'filename_folder' : '/home/datasets/COCO_filename',
@@ -47,13 +47,8 @@ def home(request):
         opt = pickle.load(f)
     opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
-<<<<<<< HEAD
-        opt['text_model_type'], opt['text_model_pretrained'], device)
-    text_encoder = load_transform_model(opt, text_encoder_path, device)
-=======
         opt['text_model_type'], opt['text_model_pretrained'], device, path['COCO']['bert_model_path'])
     text_encoder = load_transform_model(opt, path['COCO']['text_encoder_path'], device)
->>>>>>> 35464302cb96819961c805bc3c3ec4a71a03a223
     # image_features, image_names = load_all_feature(
     #     image_feature_path, filename_path, device)
     return HttpResponse('Setup done!')
@@ -66,8 +61,8 @@ def get_images(request, caption, dataset, dist_func, k, start_from):
         dist_func = euclidean_dist
     dists, filenames = get_images_from_caption(caption=caption,
                                                 dataset=dataset,
-                                              image_features_folder=dataset_path[dataset]['image_feature_folder'],
-                                              image_names_folder=dataset_path[dataset]['filename_folder'],
+                                              image_features_folder=path[dataset]['image_feature_folder'],
+                                              image_names_folder=path[dataset]['filename_folder'],
                                               text_model=text_model,
                                               text_tokenizer=text_tokenizer,
                                               text_encoder=text_encoder,
@@ -78,7 +73,7 @@ def get_images(request, caption, dataset, dist_func, k, start_from):
     response_data['image'] = []
     #TODO: Add different image dataset
     for filename in filenames:
-        with open(os.path.join(dataset_path[dataset]['image_folder'], filename), 'rb') as f:
+        with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
             response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
     response_data['dists'] = dists.tolist()
     # print(dists)
