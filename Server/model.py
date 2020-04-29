@@ -1,10 +1,9 @@
 from torch.nn import Sequential
 import torch.nn as nn
-from torchvision import models
 import torch.nn.functional as F
 from torch.optim import Adam
 import torch
-from transformers import BertModel, BertTokenizer
+from transformers import *
 import os
 import time
 
@@ -35,12 +34,18 @@ class NeuralNetwork(nn.Module):
         
         for i in range(len(hidden_units) - 1):
             self.network.add_module("dense_" + str(i), nn.Linear(hidden_units[i], hidden_units[i+1]))
+            # Hidden activation
             if hidden_activation == 'relu':
               self.network.add_module("activation_" + str(i), nn.ReLU())
             elif hidden_activation == 'sigmoid':
               self.network.add_module("activation_" + str(i), nn.Sigmoid())
             elif hidden_activation == 'tanh':
               self.network.add_module("activation_" + str(i), nn.Tanh())
+            elif hidden_activation == 'lrelu':
+              self.network.add_module("activation_" + str(i), nn.LeakyReLU())
+            elif hidden_activation == 'prelu':
+              self.network.add_module("activation_" + str(i), nn.PReLU())
+            # Batchnorm on hidden layers
             if self.use_batchnorm:
               self.network.add_module("batchnorm_" + str(i), nn.BatchNorm1d(hidden_units[i+1]))
         
@@ -49,6 +54,7 @@ class NeuralNetwork(nn.Module):
           self.network.add_module("dropout", nn.Dropout(0.2))
 
         self.network.add_module("output", nn.Linear(hidden_units[-1], output_dim))
+        # Output activation
         if output_activation == 'relu':
           self.network.add_module("activation_out", nn.ReLU())
         elif output_activation == 'sigmoid':
@@ -58,6 +64,22 @@ class NeuralNetwork(nn.Module):
 
     def forward(self, x):
         return self.network(x)
+
+class BertFinetune(nn.Module):
+    def __init__(self, bert_model, output_type='cls'):
+        super().__init__()
+        self.bert_model = bert_model
+        self.output_type = output_type
+        #self.dropout = nn.Dropout(0.2)
+    def forward(self, input_ids, attention_mask):
+        output = self.bert_model(input_ids, attention_mask = attention_mask)
+        if self.output_type == 'mean':
+            feature = (output[0] * attention_mask.unsqueeze(2)).sum(dim=1).div(attention_mask.sum(dim=1, keepdim=True))
+        elif self.output_type == 'cls2':
+            feature = torch.cat((output[2][-1][:,0,...], output[2][-2][:,0,...]), -1)
+        else:
+            feature = output[2][-1][:,0,...]
+        return feature
 
 def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''):
     '''
@@ -96,26 +118,7 @@ def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''
         return image_encoder, text_encoder
     return text_encoder
 
-def load_image_model(model_type, device):
-    '''
-    Load model to extract feature from images
-    Input:
-        - model_type (str): Type of models: resnet50, resnet101, resnet152
-        - device (torch.device): where model is saved when loaded
-    Output:
-        - Pytorch image extraction model
-    '''
-    # TODO: Add Densenet and others
-    if model_type == 'resnet50':
-        model = models.resnet50(pretrained = True).to(device)
-    elif model_type == 'resnet101':
-        model = models.resnet101(pretrained = True).to(device)
-    else:
-        model = models.resnet152(pretrained = True).to(device)
-    model = Sequential(*list(model.children())[:-1])
-    model.eval()
-
-def load_text_model(model_type, pretrained, device, model_path=''):
+def load_text_model(model_type, pretrained, output_type, device, model_path=''):
     '''
     Load model to extract feature from text
     Input:
@@ -127,9 +130,20 @@ def load_text_model(model_type, pretrained, device, model_path=''):
     '''
     #TODO: Add RoBerta and others
     if model_type == 'bert':
-        model = BertModel.from_pretrained(pretrained).to(device)
+        config = BertConfig.from_pretrained('/bert-base-uncased/', output_hidden_states = True)
+        bert = BertModel(config).to(device)
+        model = BertFinetune(bert, output_type)
         if len(model_path)>0:
             model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
-        tokenizer = BertTokenizer.from_pretrained(pretrained)
+        tokenizer = BertTokenizer.from_pretrained('/bert-base-uncased/')
+        return model, tokenizer
+    elif model_type == 'roberta':
+        config = RobertaConfig.from_pretrained(pretrained, output_hidden_states = True)
+        bert = RobertaModel(config).to(device)
+        model = BertFinetune(bert, output_type)
+        if len(model_path)>0:
+            model.load_state_dict(torch.load(model_path, map_location=device))
+        model.eval()
+        tokenizer = RobertaTokenizer.from_pretrained(pretrained)
         return model, tokenizer

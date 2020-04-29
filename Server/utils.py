@@ -1,5 +1,5 @@
 from .dataset import ImageDataset, FeatureDataset
-from .model import load_image_model, load_text_model, load_transform_model, normalize, l2norm
+from .model import load_text_model, load_transform_model, normalize, l2norm
 import pickle
 import torch
 import pandas as pd
@@ -43,7 +43,7 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 # stored_sorted = dict()
 image_names = dict()
 
-def get_images_from_caption(caption, dataset, image_features_folder, image_names_folder, text_model, text_tokenizer, text_encoder, device, dist_func=cosine_dist, k=50,start_from=0):
+def get_images_from_caption(caption, dataset, image_features_folder, image_names_folder, text_model, text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
     '''
     Return distances and indices of k nearest images of caption
     '''
@@ -57,10 +57,11 @@ def get_images_from_caption(caption, dataset, image_features_folder, image_names
 
     # print('Calculating for caption: ',caption)
     # Convert to token
-    input_ids = torch.tensor(
-        [text_tokenizer.encode(caption, add_special_tokens=True)]).to(device)
+    tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
+    input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
+    attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
     # Use bert-like model to encode (and normalize)
-    text_feature = l2norm(text_model(input_ids)[0][-1][0,...].unsqueeze(0))
+    text_feature = l2norm(text_model(input_ids=input_ids, attention_mask=attention_mask))
     
     # Transform to common space
     text_feature = text_encoder(text_feature)
