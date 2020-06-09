@@ -66,20 +66,22 @@ class NeuralNetwork(nn.Module):
         return self.network(x)
 
 class BertFinetune(nn.Module):
-    def __init__(self, bert_model, output_type='cls'):
-        super().__init__()
-        self.bert_model = bert_model
-        self.output_type = output_type
-        #self.dropout = nn.Dropout(0.2)
-    def forward(self, input_ids, attention_mask):
-        output = self.bert_model(input_ids, attention_mask = attention_mask)
-        if self.output_type == 'mean':
-            feature = (output[0] * attention_mask.unsqueeze(2)).sum(dim=1).div(attention_mask.sum(dim=1, keepdim=True))
-        elif self.output_type == 'cls2':
-            feature = torch.cat((output[2][-1][:,0,...], output[2][-2][:,0,...]), -1)
-        else:
-            feature = output[2][-1][:,0,...]
-        return feature
+  def __init__(self, bert_model, output_type='cls'):
+    super().__init__()
+    self.bert_model = bert_model
+    self.output_type = output_type
+    #self.dropout = nn.Dropout(0.2)
+  def forward(self, input_ids, attention_mask):
+    output = self.bert_model(input_ids, attention_mask = attention_mask)
+    if self.output_type == 'mean':
+      feature = (output[0] * attention_mask.unsqueeze(2)).sum(dim=1).div(attention_mask.sum(dim=1, keepdim=True))
+    elif self.output_type == 'cls2':
+      feature = torch.cat((output[2][-1][:,0,...], output[2][-2][:,0,...]), -1)
+    elif self.output_type == 'cls4':
+      feature = torch.cat((output[2][-1][:,0,...], output[2][-2][:,0,...], output[2][-3][:,0,...], output[2][-4][:,0,...]), -1)
+    else:
+      feature = output[2][-1][:,0,...]
+    return feature
 
 def load_transform_model(opt, text_encoder_path, device, image_encoder_path = ''):
     '''
@@ -139,11 +141,11 @@ def load_text_model(model_type, pretrained, output_type, device, model_path=''):
         tokenizer = BertTokenizer.from_pretrained('/bert-base-uncased/')
         return model, tokenizer
     elif model_type == 'roberta':
-        config = RobertaConfig.from_pretrained(pretrained, output_hidden_states = True)
+        config = RobertaConfig.from_pretrained('/roberta-base/', output_hidden_states = True)
         bert = RobertaModel(config).to(device)
         model = BertFinetune(bert, output_type)
         if len(model_path)>0:
             model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
-        tokenizer = RobertaTokenizer.from_pretrained(pretrained)
+        tokenizer = RobertaTokenizer.from_pretrained('/roberta-base/')
         return model, tokenizer

@@ -41,7 +41,7 @@ def home(request):
     global text_model, text_tokenizer, text_encoder, image_features, image_names, opt
     with open(path['COCO']['option_dict_path'], 'r') as f:
         opt = json.load(f)
-    opt['text_model_pretrained'] = 'bert-base-uncased'
+    # opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
         opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, path['COCO']['bert_model_path'])
     text_encoder = load_transform_model(opt, path['COCO']['text_encoder_path'], device)
@@ -73,5 +73,6 @@ def get_images(request, caption, dataset, dist_func, k, start_from):
         with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
             response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
     response_data['dists'] = dists.tolist()
+    response_data['filename'] = filenames
     # print(dists)
     return JsonResponse(response_data)

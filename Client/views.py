@@ -9,7 +9,8 @@ def send_image_retrieval_request(caption, dataset, dist_func='cosine', k=10):
     r = requests.get(url=url).json()
     images = r['image']
     dists = r['dists']
-    return images, dists
+    filenames = r['filename']
+    return images, dists, filenames
 
 def home(request):
     return render(request, 'client_home.html', {'caption':''})
@@ -19,7 +20,8 @@ def retrieve_images(request):
     if request.method == 'GET':
         caption = request.GET.get('caption')
         dataset = request.GET.get('dataset')
-        images, _ = send_image_retrieval_request(caption,dataset)
-        return render(request, 'client_query.html', {'images': images, 'caption': caption})
+        images, _, filenames = send_image_retrieval_request(caption,dataset)
+        print(filenames)
+        return render(request, 'client_query.html', {'images_and_filenames': zip(images, filenames), 'caption': caption})
     else:
         return render(request, 'client_home.html', {'caption':''})
