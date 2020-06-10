@@ -4,33 +4,25 @@ from .utils import get_images_from_caption, load_all_feature, load_text_model, l
 import pickle
 import json
 import os
+import pandas as pd
 from django.http import JsonResponse, HttpResponse
 import base64
 # Create your views here.
 
 # Global variables
-path = {    
-    'COCO':{
-        'image_feature_folder' : '/dataset/COCO_test/transform/',
-        'filename_folder' : '/dataset/COCO_test/filename/',
-        'option_dict_path' : '/options.json',
-        'text_encoder_path' : '/text_encoder.pth',
-        'bert_model_path' : '/bert_model.pth',
-        'image_folder' : '/dataset/COCO_test/thumbnail/',
-    },
-    'LSC': {
-        'image_feature_folder' : '/dataset/LSC/transform/',
-        'filename_folder' : '/dataset/LSC/filename/',
-        'option_dict_path' : '/options.json',
-        'text_encoder_path' : '/text_encoder.pth',
-        'bert_model_path' : '/bert_model.pth',
-        'image_folder' : '/dataset/LSC/thumbnail/',
-    }
+path = {
+    'image_feature_folder' : '/dataset/LSC/transform/',
+    'filename_folder' : '/dataset/LSC/filename/',
+    'option_dict_path' : '/options.json',
+    'text_encoder_path' : '/text_encoder.pth',
+    'bert_model_path' : '/bert_model.pth',
 }
+
 text_model = None
 text_tokenizer = None
 text_encoder = None
 opt = None
+image_names = None
 device = torch.device('cpu')
 
 
@@ -38,27 +30,30 @@ def home(request):
     '''
     Load all model and features to memory
     '''
-    global text_model, text_tokenizer, text_encoder, image_features, image_names, opt
-    with open(path['COCO']['option_dict_path'], 'r') as f:
+    global text_model, text_tokenizer, text_encoder, image_names, opt
+    with open(path['option_dict_path'], 'r') as f:
         opt = json.load(f)
     # opt['text_model_pretrained'] = 'bert-base-uncased'
     text_model, text_tokenizer = load_text_model(
-        opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, path['COCO']['bert_model_path'])
-    text_encoder = load_transform_model(opt, path['COCO']['text_encoder_path'], device)
-    # image_features, image_names = load_all_feature(
-    #     image_feature_path, filename_path, device)
+        opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, path['bert_model_path'])
+    text_encoder = load_transform_model(opt, path['text_encoder_path'], device)
+    names_series = []
+    for feature_file in os.listdir(path['image_feature_folder']):
+        name_file = os.path.join(path['image_name_folder'], os.path.splitext(feature_file)[0] + '.csv')
+        filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
+        names_series.append(filenames)
+    image_names = pd.concat(names_series, ignore_index=True)
     return HttpResponse('Setup done!')
 
-def get_images(request, caption, dataset, dist_func, k, start_from):
-    global text_model, text_tokenizer, text_encoder, image_features, image_names, opt
-    if dist_func == 'cosine':
-        dist_func = cosine_dist
-    else:
+def get_images(request, caption, dist_func, k, start_from):
+    global text_model, text_tokenizer, text_encoder, image_names, opt
+    if dist_func == 'euclide':
         dist_func = euclidean_dist
+    else:
+        dist_func = cosine_dist
     dists, filenames = get_images_from_caption(caption=caption,
-                                                dataset=dataset,
-                                              image_features_folder=path[dataset]['image_feature_folder'],
-                                              image_names_folder=path[dataset]['filename_folder'],
+                                              image_features_folder=path['image_feature_folder'],
+                                              image_names=image_names,
                                               text_model=text_model,
                                               text_tokenizer=text_tokenizer,
                                               text_encoder=text_encoder,
@@ -67,11 +62,6 @@ def get_images(request, caption, dataset, dist_func, k, start_from):
                                               dist_func=dist_func,
                                               k=k, start_from=start_from)
     response_data = dict()
-    response_data['image'] = []
-    #TODO: Add different image dataset
-    for filename in filenames:
-        with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
-            response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
     response_data['dists'] = dists.tolist()
     response_data['filename'] = filenames
     # print(dists)

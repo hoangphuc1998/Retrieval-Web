@@ -5,14 +5,6 @@ import torch
 import pandas as pd
 import os
 
-def convert_image_to_feature(feature_model, transfrom_model, image_folder, save_folder, opt):
-    pass
-
-
-def load_feature(feature_folder, opt):
-    pass
-
-
 def load_all_feature(feature_file, index_file, device):
     '''
     Load all image features and filenames
@@ -43,19 +35,10 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 # stored_sorted = dict()
 image_names = dict()
 
-def get_images_from_caption(caption, dataset, image_features_folder, image_names_folder, text_model, text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
+def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
     '''
     Return distances and indices of k nearest images of caption
     '''
-    if dataset not in image_names:
-        names_series = []
-        for feature_file in os.listdir(image_features_folder):
-            name_file = os.path.join(image_names_folder, os.path.splitext(feature_file)[0] + '.csv')
-            filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
-            names_series.append(filenames)
-        image_names[dataset] = pd.concat(names_series, ignore_index=True)
-
-    # print('Calculating for caption: ',caption)
     # Convert to token
     tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
     input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
@@ -77,12 +60,12 @@ def get_images_from_caption(caption, dataset, image_features_folder, image_names
     dists = torch.cat(dists, dim=0)
     # Get top k images
     #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
-    dists_sorted, indices_sorted = torch.topk(dists,100,largest=False)
+    dists_sorted, indices_sorted = torch.topk(dists,start_from + k,largest=False)
     
     indices = indices_sorted[start_from:start_from+k]
     dists = dists_sorted[start_from:start_from+k]
 
     # Get image filenames from indices
     indices = indices.to('cpu').numpy()
-    filenames = image_names[dataset].iloc[indices].tolist()
+    filenames = image_names.iloc[indices].tolist()
     return dists, filenames
