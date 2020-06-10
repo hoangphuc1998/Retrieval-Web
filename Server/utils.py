@@ -35,7 +35,8 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 # stored_sorted = dict()
 image_names = dict()
 
-def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
+def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, 
+                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
     '''
     Return distances and indices of k nearest images of caption
     '''
@@ -68,4 +69,43 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
     # Get image filenames from indices
     indices = indices.to('cpu').numpy()
     filenames = image_names.iloc[indices].tolist()
+    return dists, filenames
+
+def get_images_from_caption_subset(caption, subset, image_features_folder, image_names, reversed_names, text_model, 
+                                    text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
+    tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
+    input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
+    attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
+
+    text_feature = text_model(input_ids, attention_mask=attention_mask)
+    text_feature = l2norm(text_feature)
+    text_feature = text_encoder(text_feature)
+    
+    # Prepare filename dict
+    filename_dict = dict()
+    for filename in subset:
+        subfolder = filename.split('/')[0]
+        if subfolder not in filename_dict:
+            filename_dict[subfolder] = []
+        filename_dict[subfolder].append(filename)
+    
+    # Calculate
+    dists = []
+    sub_image_names = []
+    for subfolder in filename_dict:
+        feature_file = os.path.join(image_features_folder, subfolder + '.pth')
+        image_features = torch.load(feature_file,map_location=device).detach().to(device)
+        image_features = image_features[reversed_names[filename_dict[subfolder]].values]
+        dists.append(dist_func(text_feature, image_features))
+        sub_image_names+=filename_dict[subfolder]
+    dists = torch.cat(dists, dim=0)
+    sub_image_names = pd.Series(sub_image_names)
+    # Get top k images
+    #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
+    dists_sorted, indices_sorted = torch.topk(dists,k,largest=False)
+    
+    indices = indices_sorted[:k]
+    dists = dists_sorted[:k]
+    indices = indices.to('cpu').numpy()
+    filenames = sub_image_names.iloc[indices].tolist()
     return dists, filenames
