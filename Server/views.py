@@ -16,6 +16,10 @@ path = {
     'option_dict_path' : '/options.json',
     'text_encoder_path' : '/text_encoder.pth',
     'bert_model_path' : '/bert_model.pth',
+    'metadata_path': '/dataset/metadata.csv',
+    'concepts_path': '/dataset/concepts.csv',
+    'similar_feature_folder': '/dataset/LSC/similar_feature/',
+    'similar_filename_folder': '/dataset/LSC/similar_filename/',
 }
 
 text_model = None
@@ -24,6 +28,8 @@ text_encoder = None
 opt = None
 image_names = None
 reversed_names = None
+metadata = None
+concepts = None
 device = torch.device('cpu')
 
 
@@ -31,7 +37,7 @@ def home(request):
     '''
     Load all model and features to memory
     '''
-    global text_model, text_tokenizer, text_encoder, image_names,reversed_names, opt
+    global text_model, text_tokenizer, text_encoder, image_names,reversed_names, opt, metadata, concepts
     with open(path['option_dict_path'], 'r') as f:
         opt = json.load(f)
     # opt['text_model_pretrained'] = 'bert-base-uncased'
@@ -47,6 +53,18 @@ def home(request):
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))
     image_names = pd.concat(names_series, ignore_index=True)
     reversed_names = pd.concat(reversed_names)
+    # Query with metadata setup
+    metadata = pd.read_csv(path['metadata_path'])
+    metadata = metadata[['minute_id', 'semantic_name']]
+    metadata = metadata.dropna()
+    concepts = pd.read_csv(path['concepts_path'])
+    concepts = concepts[['minute_id', 'image_path']]
+    concepts['image_path'] = concepts['image_path'].str.slice(17)
+    metadata = metadata.merge(concepts)
+    metadata['date'] = metadata['minute_id'].str.slice(0,8)
+    metadata['hour'] = metadata['minute_id'].str.slice(9,11)
+    metadata['minute'] = metadata['minute_id'].str.slice(11)
+
     return HttpResponse('Setup done!')
 
 def get_images(request, caption, dist_func, k, start_from):
@@ -95,6 +113,53 @@ def query_on_subset(request, caption, dist_func, k, start_from):
         response_data['dists'] = dists.tolist()
         response_data['filename'] = filenames
         # print(dists)
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'dists': [], 'filename': []})
+
+def query_by_metadata(request, place):
+    global metadata
+    res = metadata.loc[metadata['semantic_name'].str.lower().str.contains(place)]['image_path']
+    response_data = dict()
+    response_data['filename'] = res.tolist()
+    return JsonResponse(response_data)
+
+def query_by_metadata_before(request, place, minute_before):
+    global metadata, concepts
+    res = metadata.loc[metadata['semantic_name'].str.lower().str.contains(place)]
+    image_set = set()
+    if len(res)>0:
+        begin = res.iloc[0]
+        minute_id = begin['minute_id']
+        begin_time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
+        
+        image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
+        for _, row in res.iterrows():
+            minute_id = row['minute_id']
+            time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
+            if time <= begin_time + datetime.timedelta(minutes=1):
+                begin_time = time
+                continue
+            else:
+                begin_time = time
+                image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
+    response_data = dict()
+    response_data['filename'] = list(image_set)
+    return JsonResponse(response_data)
+
+def query_by_similar_image(request, k, start_from):
+    global path, device
+    if request.method=="POST":
+        image_path = request.POST.get('filename', '')
+        if len(image_path) == 0:
+            return JsonResponse({'dists': [], 'filename': []})
+        dists, filenames = get_similar_images(image_path=image_path,
+                                                similar_feature_folder=path['similar_feature_folder'],
+                                                similar_filename_folder=path['similar_filename_folder'],
+                                                device=device, k=k, start_from=start_from)
+        response_data = dict()
+        response_data['dists'] = dists.tolist()
+        response_data['filename'] = filenames
         return JsonResponse(response_data)
     else:
         return JsonResponse({'dists': [], 'filename': []})

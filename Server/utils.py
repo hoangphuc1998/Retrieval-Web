@@ -4,6 +4,8 @@ import pickle
 import torch
 import pandas as pd
 import os
+import datetime
+import time
 
 def load_all_feature(feature_file, index_file, device):
     '''
@@ -102,10 +104,49 @@ def get_images_from_caption_subset(caption, subset, image_features_folder, image
     sub_image_names = pd.Series(sub_image_names)
     # Get top k images
     #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
-    dists_sorted, indices_sorted = torch.topk(dists,k,largest=False)
+    dists_sorted, indices_sorted = torch.topk(dists,k+start_from,largest=False)
     
-    indices = indices_sorted[:k]
-    dists = dists_sorted[:k]
+    indices = indices_sorted[start_from:k+start_from]
+    dists = dists_sorted[start_from:k+start_from]
     indices = indices.to('cpu').numpy()
     filenames = sub_image_names.iloc[indices].tolist()
+    return dists, filenames
+
+def get_image_set_before_time(concepts, minute_id, minute_before):
+    res = set()
+    time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
+    time_before = time - datetime.timedelta(minutes=minute_before)
+    minute_id_before = time_before.strftime("%Y%m%d_%H%M")
+    res = set(concepts.loc[(concepts['minute_id'] >= minute_id_before) & (concepts['minute_id'] <= minute_id)]['image_path'])
+    return res
+
+def get_similar_images(image_path, similar_feature_folder, similar_filename_folder, device, k=50, start_from=0):
+    # Read filename series
+    names_series = []
+    reversed_names = []
+    for index, feature_file in enumerate(os.listdir(similar_feature_folder)):
+        name_file = os.path.join(similar_filename_folder, os.path.splitext(feature_file)[0] + '.csv')
+        filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
+        names_series.append(filenames)
+        reversed_names.append(pd.Series(filenames.index.values, index=filenames))
+    image_names = pd.concat(names_series, ignore_index=True)
+    reversed_names = pd.concat(reversed_names)
+
+    subfolder = image_path.split('/')[0]
+    path = os.path.join(similar_feature_folder, subfolder + '.pth')
+    features = torch.load(path,map_location=device).detach().to(device)
+    ref_feature = features[reversed_names[image_path]].unsqueeze(0)
+    # Calculate
+    dists = []
+    for feature_file in os.listdir(similar_feature_folder):
+        feature_file = os.path.join(similar_feature_folder, feature_file)
+        image_features = torch.load(feature_file,map_location=device).detach().to(device)
+        dists.append(cosine_dist(ref_feature, image_features))
+    dists = torch.cat(dists, dim=0)
+    dists_sorted, indices_sorted = torch.topk(dists,k + start_from,largest=False)
+    
+    indices = indices_sorted[start_from:k+start_from]
+    dists = dists_sorted[start_from:k+start_from]
+    indices = indices.to('cpu').numpy()
+    filenames = image_names.iloc[indices].tolist()
     return dists, filenames
