@@ -63,11 +63,14 @@ def get_images(request, caption, dataset, dist_func, k, start_from):
                                               dist_func=dist_func,
                                               k=k, start_from=start_from)
     response_data = dict()
-    response_data['image'] = []
+    response_data['image'] = filenames
     #TODO: Add different image dataset
-    for filename in filenames:
-        with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
-            response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
+    # for filename in filenames:
+    #     with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
+    #         response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
     response_data['dists'] = dists.tolist()
-    # print(dists)
+    response = JsonResponse(response_data)
+    response["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    response["Access-Control-Allow-Credentials"] = 'true'
+    response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
     return JsonResponse(response_data)
