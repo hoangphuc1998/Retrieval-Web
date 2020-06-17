@@ -11,18 +11,18 @@ import base64
 # Global variables
 path = {    
     'COCO':{
-        'image_feature_folder' : '/home/lehoanganh298/Documents/COCO_val_image_transform',
-        'filename_folder' : '/home/lehoanganh298/Documents/COCO_filename',
-        'option_dict_path' : '/home/lehoanganh298/Documents/options.pkl',
-        'text_encoder_path' : '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth',
-        'image_folder' : '/home/lehoanganh298/Documents/val2014',
+        'image_feature_folder' : '/home/lehoanganh298/Projects/datasets/COCO/COCO_val_image_transform',
+        'filename_folder' : '/home/lehoanganh298/Projects/datasets/COCO/COCO_filename',
+        'option_dict_path' : '/home/lehoanganh298/Projects/models/DualEncoding-XEncoder/options.pkl',
+        'text_encoder_path' : '/home/lehoanganh298/Projects/models/DualEncoding-XEncoder/DualEncoding_Ver2/best/text_encoder.pth',
+        'image_folder' : '/home/lehoanganh298/Projects/datasets/COCO/val2014',
     },
     'LSC': {
-        'image_feature_folder' : '/home/lehoanganh298/Documents/LSC_transform',
-        'filename_folder' : '/home/lehoanganh298/Documents/LSC_filename',
-        'option_dict_path' : '/home/lehoanganh298/Documents/options.pkl',
-        'text_encoder_path' : '/home/lehoanganh298/Documents/DualEncoding_Ver2/best/text_encoder.pth',
-        'image_folder' : '/home/lehoanganh298/Projects/Volumes/Samsung_T5/DATASETS/LSC2020',
+        'image_feature_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/LSC_transform',
+        'filename_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/LSC_filename',
+        'option_dict_path' : '/home/lehoanganh298/Projects/models/DualEncoding-XEncoder/options.pkl',
+        'text_encoder_path' : '/home/lehoanganh298/Projects/models/DualEncoding-XEncoder/DualEncoding_Ver2/best/text_encoder.pth',
+        'image_folder' : '/home/lehoanganh298/Projects/datasets/LSC2020/Volumes/Samsung_T5/DATASETS/LSC2020',
     }
 }
 text_model = None
