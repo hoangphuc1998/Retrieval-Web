@@ -5,11 +5,11 @@ server_address = 'http://127.0.0.1:8000/server/'
 
 # Create your views here.
 def send_image_retrieval_request(caption, dataset, dist_func='cosine', k=10):
-    url = server_address + caption + '/'+dataset+'/' + dist_func + '/' + str(k)+'/0'
+    url = server_address + 'query/' + caption + '/' + dist_func + '/' + str(k)+'/0'
     r = requests.get(url=url).json()
     images = r['image']
     dists = r['dists']
-    filenames = r['filename']
+    filenames = r['filenames']
     return images, dists, filenames
 
 def home(request):

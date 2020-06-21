@@ -13,7 +13,7 @@ import base64
 path = {
     'image_feature_folder' : '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/feature',
     'filename_folder' : '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/filename',
-    'option_dict_path' : '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/options.pkl',
+    'option_dict_path' : '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/options.json',
     'text_encoder_path' :  '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/text_encoder.pth',
     'bert_model_path' : '/home/lehoanganh298/Projects/models/LSC_Attention_Ver9/bert_model.pth',
     'metadata_path': '/dataset/metadata.csv',
@@ -41,29 +41,30 @@ def home(request):
     with open(path['option_dict_path'], 'r') as f:
         opt = json.load(f)
     # opt['text_model_pretrained'] = 'bert-base-uncased'
+
     text_model, text_tokenizer = load_text_model(
         opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, path['bert_model_path'])
     text_encoder = load_transform_model(opt, path['text_encoder_path'], device)
     names_series = []
     reversed_names_series = []
     for feature_file in os.listdir(path['image_feature_folder']):
-        name_file = os.path.join(path['image_name_folder'], os.path.splitext(feature_file)[0] + '.csv')
+        name_file = os.path.join(path['filename_folder'], os.path.splitext(feature_file)[0] + '.csv')
         filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
         names_series.append(filenames)
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))
     image_names = pd.concat(names_series, ignore_index=True)
-    reversed_names = pd.concat(reversed_names)
+    reversed_names_series = pd.concat(reversed_names_series)
     # Query with metadata setup
-    metadata = pd.read_csv(path['metadata_path'])
-    metadata = metadata[['minute_id', 'semantic_name']]
-    metadata = metadata.dropna()
-    concepts = pd.read_csv(path['concepts_path'])
-    concepts = concepts[['minute_id', 'image_path']]
-    concepts['image_path'] = concepts['image_path'].str.slice(17)
-    metadata = metadata.merge(concepts)
-    metadata['date'] = metadata['minute_id'].str.slice(0,8)
-    metadata['hour'] = metadata['minute_id'].str.slice(9,11)
-    metadata['minute'] = metadata['minute_id'].str.slice(11)
+    # metadata = pd.read_csv(path['metadata_path'])
+    # metadata = metadata[['minute_id', 'semantic_name']]
+    # metadata = metadata.dropna()
+    # concepts = pd.read_csv(path['concepts_path'])
+    # concepts = concepts[['minute_id', 'image_path']]
+    # concepts['image_path'] = concepts['image_path'].str.slice(17)
+    # metadata = metadata.merge(concepts)
+    # metadata['date'] = metadata['minute_id'].str.slice(0,8)
+    # metadata['hour'] = metadata['minute_id'].str.slice(9,11)
+    # metadata['minute'] = metadata['minute_id'].str.slice(11)
 
     return HttpResponse('Setup done!')
 
@@ -84,7 +85,7 @@ def get_images(request, caption, dist_func, k, start_from):
                                               dist_func=dist_func,
                                               k=k, start_from=start_from)
     response_data = dict()
-    response_data['image'] = filenames
+    response_data['filenames'] = filenames
     #TODO: Add different image dataset
     # for filename in filenames:
     #     with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:

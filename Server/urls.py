@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import *
+from .views import home, get_images, query_on_subset, query_by_metadata, query_by_metadata_before, query_by_similar_image
+# print('-------------------')
+# print(home)
+# print(path)
 urlpatterns = [
     path('', home, name='home'),
     path('query/<str:caption>/<str:dist_func>/<int:k>/<int:start_from>', get_images, name='get_images'),

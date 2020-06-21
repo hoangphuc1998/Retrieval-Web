@@ -132,20 +132,20 @@ def load_text_model(model_type, pretrained, output_type, device, model_path=''):
     '''
     #TODO: Add RoBerta and others
     if model_type == 'bert':
-        config = BertConfig.from_pretrained('/bert-base-uncased/', output_hidden_states = True)
+        config = BertConfig.from_pretrained('bert-base-uncased', output_hidden_states = True)
         bert = BertModel(config).to(device)
         model = BertFinetune(bert, output_type)
         if len(model_path)>0:
             model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
-        tokenizer = BertTokenizer.from_pretrained('/bert-base-uncased/')
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         return model, tokenizer
     elif model_type == 'roberta':
-        config = RobertaConfig.from_pretrained('/roberta-base/', output_hidden_states = True)
+        config = RobertaConfig.from_pretrained('roberta-base', output_hidden_states = True)
         bert = RobertaModel(config).to(device)
         model = BertFinetune(bert, output_type)
         if len(model_path)>0:
             model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
-        tokenizer = RobertaTokenizer.from_pretrained('/roberta-base/')
+        tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
         return model, tokenizer
