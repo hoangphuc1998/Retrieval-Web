@@ -41,6 +41,13 @@ def query_by_caption(request, caption, dist_func, num_images):
     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[:num_images]})
 
 def query_by_caption_on_subset(request):
+    """
+    data: {
+        subset: subset,
+        caption: caption,
+        numImages: numImages
+      }
+    """
     if request.method=="POST":
         data = json.loads(request.body.decode('utf-8'))
         return JsonResponse({'filenames': data['subset'][0::2][:data['numImages']]})
@@ -50,13 +57,23 @@ def query_by_metadata(request, places):
     return JsonResponse({'filenames': list(filename_df.iloc[:,1][:200])})
 
 def query_by_metadata_on_subset(request):
+    """
+    data: {
+        subset: subset,
+        locations: seperated by '&'
+      }
+    """
     if request.method=="POST":
         data = json.loads(request.body.decode('utf-8'))
         return JsonResponse({'filenames': data['subset'][1::3]})
         
-# def query_by_metadata(request, place):
+def query_similar_images(request, image, num_images):
+    ''' image: <folder_name>&<file_name>'''
+    folder_name,image_name = image.split('&')
+    filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
+    return JsonResponse({'filenames': list(filename_df.iloc[:,1])[1000:1000+num_images]})
+
 # def query_by_metadata_before(request, place, minute_before):
-# def query_by_similar_image(request, k, start_from):
 
 # def home(request):
 #     '''

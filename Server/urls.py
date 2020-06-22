@@ -1,6 +1,6 @@
 from django.urls import path
 # from .views import home, get_images, query_on_subset, query_by_metadata, query_by_metadata_before, query_by_similar_image
-from .views import query_by_caption, query_by_metadata, query_by_caption_on_subset,query_by_metadata_on_subset
+from .views import query_by_caption, query_by_metadata, query_by_caption_on_subset,query_by_metadata_on_subset,query_similar_images
 
 urlpatterns = [
     # path('', home, name='home'),
@@ -9,7 +9,7 @@ urlpatterns = [
     path('query_by_caption_on_subset', query_by_caption_on_subset, name='query_on_subset'),
     path('query_by_metadata_on_subset', query_by_metadata_on_subset, name='query_by_metadata_on_subset'),
     # path('query_by_metadata_before/<str:place>/<int:minute_before>', query_by_metadata_before, name='query_by_metadata_before'),
-    # path('query_by_similar_image/<int:k>/<int:start_from>', query_by_similar_image, name='query_by_similar_image'),
+    path('query_similar_images/<str:image>/<int:num_images>', query_similar_images, name='query_by_similar_image'),
 ]
 
 # urlpatterns = [
