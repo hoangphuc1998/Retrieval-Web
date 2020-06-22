@@ -66,12 +66,42 @@ def query_by_metadata_on_subset(request):
     if request.method=="POST":
         data = json.loads(request.body.decode('utf-8'))
         return JsonResponse({'filenames': data['subset'][1::3]})
-        
+
+def query_by_time_range_on_subset(request):
+    """
+    data: {
+        subset: subset,
+        timeBegin:"07:30",
+        timeEnd:"08:30"
+      }
+    """
+    if request.method=="POST":
+        data = json.loads(request.body.decode('utf-8'))
+        return JsonResponse({'filenames': data['subset'][0::4]})
+
+def query_images_before(request):
+    """
+    data: {
+        subset: subset,
+        minutes:30,
+      }
+    """
+    if request.method=="POST":
+        data = json.loads(request.body.decode('utf-8'))
+        return JsonResponse({'filenames': data['subset'][-100:]})
+
+
 def query_similar_images(request, image, num_images):
     ''' image: <folder_name>&<file_name>'''
     folder_name,image_name = image.split('&')
     filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[1000:1000+num_images]})
+
+def query_adjacent_images(request, image, num_images):
+    ''' image: <folder_name>&<file_name>'''
+    folder_name,image_name = image.split('&')
+    filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
+    return JsonResponse({'filenames': list(filename_df.iloc[:,1])[500:500+num_images]})
 
 # def query_by_metadata_before(request, place, minute_before):
 
