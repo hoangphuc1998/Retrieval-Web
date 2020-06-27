@@ -8,10 +8,10 @@ import pandas as pd
 import glob
 class ServerConfig(AppConfig):
     name = 'Server'
-    PARENT_PATH = '/media/hoangphuc/Data/ImageCLEF/Server'
+    PARENT_PATH = Path('/media/hoangphuc/Data/ImageCLEF/Server')
     path = {
-        'sajem_feature_folder' : PARENT_PATH/'features/sajem/feature',
-        'sajem_filename_folder' : PARENT_PATH/'features/sajem/featurefilename',
+        'sajem_feature_folder' : PARENT_PATH/'features/sajem/feature/',
+        'sajem_filename_folder' : PARENT_PATH/'features/sajem/filename/',
         'resnet_feature_folder': PARENT_PATH/'features/resnet/feature/',
         'resnet_filename_folder': PARENT_PATH/'features/resnet/filename/',
         'option_dict_path' : PARENT_PATH/'models/options.json',
@@ -53,3 +53,4 @@ class ServerConfig(AppConfig):
     metadata['date'] = metadata['minute_id'].str.slice(0,8)
     metadata['hour'] = metadata['minute_id'].str.slice(9,11)
     metadata['minute'] = metadata['minute_id'].str.slice(11)
+    print('Setup done')

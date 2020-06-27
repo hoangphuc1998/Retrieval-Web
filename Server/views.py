@@ -1,12 +1,37 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-
+from .utils import *
+from .apps import ServerConfig
+import json
 # Create your views here.
 
+def home(request):
+    '''
+    Load all model and features to memory
+    '''
+    return HttpResponse("Server is running")
+
 def query_by_caption(request, caption, dist_func, num_images):
-    filename_df = pd.read_csv(path['filename_folder']+'/2015-02-23.csv')
-    return JsonResponse({'filenames': list(filename_df.iloc[:,1])[:num_images]})
+    if dist_func == 'euclide':
+        dist_func = euclidean_dist
+    else:
+        dist_func = cosine_dist
+    dists, filenames = get_images_from_caption(caption=caption,
+                                              image_features_folder=ServerConfig.path['sajem_feature_folder'],
+                                              image_names=ServerConfig.image_names,
+                                              text_model=ServerConfig.text_model,
+                                              text_tokenizer=ServerConfig.text_tokenizer,
+                                              text_encoder=ServerConfig.text_encoder,
+                                              device=ServerConfig.device,
+                                              max_seq_len=ServerConfig.opt['max_seq_len'],
+                                              dist_func=dist_func,
+                                              k=num_images,
+                                              start_from=0)
+    response_data = dict()
+    response_data['filenames'] = filenames
+    response_data['dists'] = dists.tolist()
+    return JsonResponse(response_data)
 
 def query_by_caption_on_subset(request):
     """
@@ -18,91 +43,85 @@ def query_by_caption_on_subset(request):
     """
     if request.method=="POST":
         data = json.loads(request.body.decode('utf-8'))
-        return JsonResponse({'filenames': data['subset'][0::2][:data['numImages']]})
-
-def query_by_metadata(request, places):
-    filename_df = pd.read_csv(path['filename_folder']+'/2015-02-24.csv')
-    return JsonResponse({'filenames': list(filename_df.iloc[:,1][:200])})
-
-def query_by_metadata_on_subset(request):
-    """
-    data: {
-        subset: subset,
-        locations: seperated by '&'
-      }
-    """
-    if request.method=="POST":
-        data = json.loads(request.body.decode('utf-8'))
-        return JsonResponse({'filenames': data['subset'][1::3]})
-
-def query_by_time_range_on_subset(request):
-    """
-    data: {
-        subset: subset,
-        timeBegin:"07:30",
-        timeEnd:"08:30"
-      }
-    """
-    if request.method=="POST":
-        data = json.loads(request.body.decode('utf-8'))
-        return JsonResponse({'filenames': data['subset'][0::4]})
-
-def query_images_before(request):
-    """
-    data: {
-        subset: subset,
-        minutes:30,
-      }
-    """
-    if request.method=="POST":
-        data = json.loads(request.body.decode('utf-8'))
-        return JsonResponse({'filenames': data['subset'][-100:]})
+        dists, filenames = get_images_from_caption_subset(caption=data['caption'],
+                                                        subset=data['subset'],
+                                                        image_features_folder=ServerConfig.path['sajem_feature_folder'],
+                                                        image_names=ServerConfig.image_names,
+                                                        reversed_names=ServerConfig.reversed_names_series,
+                                                        text_model=ServerConfig.text_model,
+                                                        text_tokenizer=ServerConfig.text_tokenizer,
+                                                        text_encoder=ServerConfig.text_encoder,
+                                                        device=ServerConfig.device,
+                                                        max_seq_len=ServerConfig.opt['max_seq_len'],
+                                                        dist_func=cosine_dist,
+                                                        k=data['numImages'],
+                                                        start_from=0)
+        response_data = dict()
+        response_data['filenames'] = filenames
+        response_data['dists'] = dists.tolist()
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'dists': [], 'filename': []})
 
 
-def query_similar_images(request, image, num_images):
-    ''' image: <folder_name>&<file_name>'''
-    folder_name,image_name = image.split('&')
-    filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
-    return JsonResponse({'filenames': list(filename_df.iloc[:,1])[1000:1000+num_images]})
+# def query_by_metadata(request, places):
+#     filename_df = pd.read_csv(path['filename_folder']+'/2015-02-24.csv')
+#     return JsonResponse({'filenames': list(filename_df.iloc[:,1][:200])})
 
-def query_adjacent_images(request, image, num_images):
-    ''' image: <folder_name>&<file_name>'''
-    folder_name,image_name = image.split('&')
-    filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
-    return JsonResponse({'filenames': list(filename_df.iloc[:,1])[500:500+num_images]})
+# def query_by_metadata_on_subset(request):
+#     """
+#     data: {
+#         subset: subset,
+#         locations: seperated by '&'
+#       }
+#     """
+#     if request.method=="POST":
+#         data = json.loads(request.body.decode('utf-8'))
+#         return JsonResponse({'filenames': data['subset'][1::3]})
+
+# def query_by_time_range_on_subset(request):
+#     """
+#     data: {
+#         subset: subset,
+#         timeBegin:"07:30",
+#         timeEnd:"08:30"
+#       }
+#     """
+#     if request.method=="POST":
+#         data = json.loads(request.body.decode('utf-8'))
+#         return JsonResponse({'filenames': data['subset'][0::4]})
+
+# def query_images_before(request):
+#     """
+#     data: {
+#         subset: subset,
+#         minutes:30,
+#       }
+#     """
+#     if request.method=="POST":
+#         data = json.loads(request.body.decode('utf-8'))
+#         return JsonResponse({'filenames': data['subset'][-100:]})
+
+
+# def query_similar_images(request, image, num_images):
+#     ''' image: <folder_name>&<file_name>'''
+#     folder_name,image_name = image.split('&')
+#     filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
+#     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[1000:1000+num_images]})
+
+# def query_adjacent_images(request, image, num_images):
+#     ''' image: <folder_name>&<file_name>'''
+#     folder_name,image_name = image.split('&')
+#     filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
+#     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[500:500+num_images]})
 
 # def query_by_metadata_before(request, place, minute_before):
 
-def home(request):
-    '''
-    Load all model and features to memory
-    '''
-    return HttpResponse("Server is running")
+
 
 # def get_images(request, caption, dist_func, k, start_from):
 #     global text_model, text_tokenizer, text_encoder, image_names, opt
-#     if dist_func == 'euclide':
-#         dist_func = euclidean_dist
-#     else:
-#         dist_func = cosine_dist
-#     dists, filenames = get_images_from_caption(caption=caption,
-#                                               image_features_folder=path['image_feature_folder'],
-#                                               image_names=image_names,
-#                                               text_model=text_model,
-#                                               text_tokenizer=text_tokenizer,
-#                                               text_encoder=text_encoder,
-#                                               device=device,
-#                                               max_seq_len=opt['max_seq_len'],
-#                                               dist_func=dist_func,
-#                                               k=k, start_from=start_from)
-#     response_data = dict()
-#     response_data['filenames'] = filenames
-#     #TODO: Add different image dataset
-#     # for filename in filenames:
-#     #     with open(os.path.join(path[dataset]['image_folder'], filename), 'rb') as f:
-#     #         response_data['image'].append(base64.b64encode(f.read()).decode('utf-8'))
-#     response_data['dists'] = dists.tolist()
-#     return JsonResponse(response_data)
+
 
 # def query_on_subset(request, caption, dist_func, k, start_from):
 #     global text_model, text_tokenizer, text_encoder, image_names, reversed_names, opt

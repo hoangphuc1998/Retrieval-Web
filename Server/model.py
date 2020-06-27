@@ -135,8 +135,7 @@ def load_text_model(model_type, pretrained, output_type, device, model_path=''):
         config = BertConfig.from_pretrained('bert-base-uncased', output_hidden_states = True)
         bert = BertModel(config).to(device)
         model = BertFinetune(bert, output_type)
-        if len(model_path)>0:
-            model.load_state_dict(torch.load(model_path, map_location=device))
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         return model, tokenizer
@@ -144,8 +143,7 @@ def load_text_model(model_type, pretrained, output_type, device, model_path=''):
         config = RobertaConfig.from_pretrained('roberta-base', output_hidden_states = True)
         bert = RobertaModel(config).to(device)
         model = BertFinetune(bert, output_type)
-        if len(model_path)>0:
-            model.load_state_dict(torch.load(model_path, map_location=device))
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
         return model, tokenizer
