@@ -126,12 +126,13 @@ def query_similar_images(request, image, num_images):
 # def query_by_metadata_before(request, place, minute_before):
 
 
-# def query_by_metadata(request, place):
-#     global metadata
-#     res = metadata.loc[metadata['semantic_name'].str.lower().str.contains(place)]['image_path']
-#     response_data = dict()
-#     response_data['filename'] = res.tolist()
-#     return JsonResponse(response_data)
+def query_by_metadata(request, places):
+    metadata = ServerConfig.metadata
+    places = places.split('&')
+    res = metadata.loc[metadata['semantic_name'].isin(places)]['image_path']
+    response_data = dict()
+    response_data['filenames'] = res.tolist()
+    return JsonResponse(response_data)
 
 # def query_by_metadata_before(request, place, minute_before):
 #     global metadata, concepts
