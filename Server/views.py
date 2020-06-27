@@ -103,11 +103,19 @@ def query_by_caption_on_subset(request):
 #         return JsonResponse({'filenames': data['subset'][-100:]})
 
 
-# def query_similar_images(request, image, num_images):
-#     ''' image: <folder_name>&<file_name>'''
-#     folder_name,image_name = image.split('&')
-#     filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
-#     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[1000:1000+num_images]})
+def query_similar_images(request, image, num_images):
+    ''' image: <folder_name>&<file_name>'''
+    image_path = image.replace('&', '/')
+    if len(image_path) == 0:
+        return JsonResponse({'dists': [], 'filename': []})
+    dists, filenames = get_similar_images(image_path=image_path,
+                                            similar_feature_folder=ServerConfig.path['resnet_feature_folder'],
+                                            similar_filename_folder=ServerConfig.path['resnet_filename_folder'],
+                                            device=ServerConfig.device, k=num_images, start_from=0)
+    response_data = dict()
+    response_data['dists'] = dists.tolist()
+    response_data['filenames'] = filenames
+    return JsonResponse(response_data)
 
 # def query_adjacent_images(request, image, num_images):
 #     ''' image: <folder_name>&<file_name>'''
@@ -117,39 +125,6 @@ def query_by_caption_on_subset(request):
 
 # def query_by_metadata_before(request, place, minute_before):
 
-
-
-# def get_images(request, caption, dist_func, k, start_from):
-#     global text_model, text_tokenizer, text_encoder, image_names, opt
-
-
-# def query_on_subset(request, caption, dist_func, k, start_from):
-#     global text_model, text_tokenizer, text_encoder, image_names, reversed_names, opt
-#     if request.method=="POST":
-#         if dist_func == 'euclide':
-#             dist_func = euclidean_dist
-#         else:
-#             dist_func = cosine_dist
-#         subset = request.POST.get('image_list', [])
-#         dists, filenames = get_images_from_caption_subset(caption=caption,
-#                                                         subset=subset,
-#                                                         image_features_folder=path['image_feature_folder'],
-#                                                         image_names=image_names,
-#                                                         reversed_names=reversed_names,
-#                                                         text_model=text_model,
-#                                                         text_tokenizer=text_tokenizer,
-#                                                         text_encoder=text_encoder,
-#                                                         device=device,
-#                                                         max_seq_len=opt['max_seq_len'],
-#                                                         dist_func=dist_func,
-#                                                         k=k, start_from=start_from)
-#         response_data = dict()
-#         response_data['dists'] = dists.tolist()
-#         response_data['filename'] = filenames
-#         # print(dists)
-#         return JsonResponse(response_data)
-#     else:
-#         return JsonResponse({'dists': [], 'filename': []})
 
 # def query_by_metadata(request, place):
 #     global metadata
@@ -183,17 +158,4 @@ def query_by_caption_on_subset(request):
 
 # def query_by_similar_image(request, k, start_from):
 #     global path, device
-#     if request.method=="POST":
-#         image_path = request.POST.get('filename', '')
-#         if len(image_path) == 0:
-#             return JsonResponse({'dists': [], 'filename': []})
-#         dists, filenames = get_similar_images(image_path=image_path,
-#                                                 similar_feature_folder=path['similar_feature_folder'],
-#                                                 similar_filename_folder=path['similar_filename_folder'],
-#                                                 device=device, k=k, start_from=start_from)
-#         response_data = dict()
-#         response_data['dists'] = dists.tolist()
-#         response_data['filename'] = filenames
-#         return JsonResponse(response_data)
-#     else:
-#         return JsonResponse({'dists': [], 'filename': []})
+

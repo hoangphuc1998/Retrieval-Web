@@ -124,7 +124,7 @@ def get_similar_images(image_path, similar_feature_folder, similar_filename_fold
     # Read filename series
     names_series = []
     reversed_names = []
-    for index, feature_file in enumerate(os.listdir(similar_feature_folder)):
+    for feature_file in os.listdir(similar_feature_folder):
         name_file = os.path.join(similar_filename_folder, os.path.splitext(feature_file)[0] + '.csv')
         filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
         names_series.append(filenames)
@@ -143,10 +143,10 @@ def get_similar_images(image_path, similar_feature_folder, similar_filename_fold
         image_features = torch.load(feature_file,map_location=device).detach().to(device)
         dists.append(cosine_dist(ref_feature, image_features))
     dists = torch.cat(dists, dim=0)
-    dists_sorted, indices_sorted = torch.topk(dists,k + start_from,largest=False)
+    dists_sorted, indices_sorted = torch.topk(dists,k + start_from + 1,largest=False)
     
-    indices = indices_sorted[start_from:k+start_from]
-    dists = dists_sorted[start_from:k+start_from]
+    indices = indices_sorted[start_from + 1:k+start_from + 1]
+    dists = dists_sorted[start_from + 1:k+start_from + 1]
     indices = indices.to('cpu').numpy()
     filenames = image_names.iloc[indices].tolist()
     return dists, filenames
