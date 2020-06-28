@@ -67,13 +67,13 @@ def query_by_metadata_on_subset(request):
     """
     data: {
         subset: subset,
-        locations: seperated by '&'
+        locations: seperated by '|'
       }
     """
     if request.method=="POST":
         data = json.loads(request.body.decode('utf-8'))
         metadata = ServerConfig.metadata
-        places = data['locations'].split('&')
+        places = data['locations'].split('|')
         res = metadata.loc[(metadata['image_path'].isin(data['subset'])) & (metadata['semantic_name'].isin(places))]
         sorterIndex = dict(zip(data['subset'],range(len(data['subset']))))
         res['rank'] = res['image_path'].map(sorterIndex)
@@ -162,7 +162,7 @@ def query_similar_images(request, image, num_images):
 
 def query_by_metadata(request, places):
     metadata = ServerConfig.metadata
-    places = places.split('&')
+    places = places.split('|')
     res = metadata.loc[metadata['semantic_name'].isin(places)]['image_path']
     response_data = dict()
     response_data['filenames'] = res.tolist()
