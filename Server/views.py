@@ -68,16 +68,23 @@ def query_by_caption_on_subset(request):
 #     filename_df = pd.read_csv(path['filename_folder']+'/2015-02-24.csv')
 #     return JsonResponse({'filenames': list(filename_df.iloc[:,1][:200])})
 
-# def query_by_metadata_on_subset(request):
-#     """
-#     data: {
-#         subset: subset,
-#         locations: seperated by '&'
-#       }
-#     """
-#     if request.method=="POST":
-#         data = json.loads(request.body.decode('utf-8'))
-#         return JsonResponse({'filenames': data['subset'][1::3]})
+def query_by_metadata_on_subset(request):
+    """
+    data: {
+        subset: subset,
+        locations: seperated by '&'
+      }
+    """
+    if request.method=="POST":
+        data = json.loads(request.body.decode('utf-8'))
+        metadata = ServerConfig.metadata
+        places = data['locations'].split('&')
+        res = metadata.loc[(metadata['image_path'].isin(data['subset'])) & (metadata['semantic_name'].isin(places))]['image_path']
+        response_data = dict()
+        response_data['filenames'] = res.tolist()
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'filenames': []})
 
 # def query_by_time_range_on_subset(request):
 #     """
