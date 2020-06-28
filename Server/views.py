@@ -98,16 +98,40 @@ def query_by_metadata_on_subset(request):
 #         data = json.loads(request.body.decode('utf-8'))
 #         return JsonResponse({'filenames': data['subset'][0::4]})
 
-# def query_images_before(request):
-#     """
-#     data: {
-#         subset: subset,
-#         minutes:30,
-#       }
-#     """
-#     if request.method=="POST":
-#         data = json.loads(request.body.decode('utf-8'))
-#         return JsonResponse({'filenames': data['subset'][-100:]})
+def query_images_before(request):
+    """
+    data: {
+        subset: subset,
+        minutes:30,
+      }
+    """
+    if request.method=="POST":
+        data = json.loads(request.body.decode('utf-8'))
+        metadata = ServerConfig.metadata
+        concepts = ServerConfig.concepts
+        minute_before = int(data['minutes'])
+        res = metadata.loc[metadata['image_path'].isin(data['subset'])]
+        image_set = set()
+        if len(res)>0:
+            begin = res.iloc[0]
+            minute_id = begin['minute_id']
+            begin_time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
+            
+            image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
+            for _, row in res.iterrows():
+                minute_id = row['minute_id']
+                time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
+                if time <= begin_time + datetime.timedelta(minutes=1):
+                    begin_time = time
+                    continue
+                else:
+                    begin_time = time
+                    image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
+        response_data = dict()
+        response_data['filenames'] = list(image_set)
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'filenames': []})
 
 
 def query_similar_images(request, image, num_images):
@@ -143,27 +167,3 @@ def query_by_metadata(request, places):
 
 # def query_by_metadata_before(request, place, minute_before):
 #     global metadata, concepts
-#     res = metadata.loc[metadata['semantic_name'].str.lower().str.contains(place)]
-#     image_set = set()
-#     if len(res)>0:
-#         begin = res.iloc[0]
-#         minute_id = begin['minute_id']
-#         begin_time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
-        
-#         image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
-#         for _, row in res.iterrows():
-#             minute_id = row['minute_id']
-#             time = datetime.datetime(int(minute_id[:4]), int(minute_id[4:6]), int(minute_id[6:8]), int(minute_id[9:11]), int(minute_id[11:]))
-#             if time <= begin_time + datetime.timedelta(minutes=1):
-#                 begin_time = time
-#                 continue
-#             else:
-#                 begin_time = time
-#                 image_set = image_set.union(get_image_set_before_time(concepts, minute_id, minute_before))
-#     response_data = dict()
-#     response_data['filename'] = list(image_set)
-#     return JsonResponse(response_data)
-
-# def query_by_similar_image(request, k, start_from):
-#     global path, device
-

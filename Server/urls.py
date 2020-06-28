@@ -4,9 +4,10 @@ from .views import query_by_caption, \
                     query_by_caption_on_subset, \
                     query_similar_images, \
                     query_by_metadata, \
-                    query_by_metadata_on_subset
+                    query_by_metadata_on_subset, \
+                    query_images_before
                     # query_by_time_range_on_subset,\
-                    # query_images_before,\
+                    
                     # query_adjacent_images\
 
 urlpatterns = [
@@ -15,9 +16,9 @@ urlpatterns = [
     
     path('query_by_metadata/<str:places>', query_by_metadata, name='query_by_metadata'),
     path('query_by_metadata_on_subset', query_by_metadata_on_subset, name='query_by_metadata_on_subset'),
-    
+
     # path('query_by_time_range_on_subset',query_by_time_range_on_subset, name='query_by_time_range_on_subset'),
-    # path('query_images_before', query_images_before, name='query_images_before'),
+    path('query_images_before', query_images_before, name='query_images_before'),
 
     path('query_similar_images/<str:image>/<int:num_images>', query_similar_images, name='query_by_similar_image'),
     # path('query_adjacent_images/<str:image>/<int:num_images',query_adjacent_images, name='query_adjacent_images'),
