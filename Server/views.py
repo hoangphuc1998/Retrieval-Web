@@ -63,11 +63,6 @@ def query_by_caption_on_subset(request):
     else:
         return JsonResponse({'dists': [], 'filename': []})
 
-
-# def query_by_metadata(request, places):
-#     filename_df = pd.read_csv(path['filename_folder']+'/2015-02-24.csv')
-#     return JsonResponse({'filenames': list(filename_df.iloc[:,1][:200])})
-
 def query_by_metadata_on_subset(request):
     """
     data: {
@@ -79,24 +74,41 @@ def query_by_metadata_on_subset(request):
         data = json.loads(request.body.decode('utf-8'))
         metadata = ServerConfig.metadata
         places = data['locations'].split('&')
-        res = metadata.loc[(metadata['image_path'].isin(data['subset'])) & (metadata['semantic_name'].isin(places))]['image_path']
+        res = metadata.loc[(metadata['image_path'].isin(data['subset'])) & (metadata['semantic_name'].isin(places))]
+        sorterIndex = dict(zip(data['subset'],range(len(data['subset']))))
+        res['rank'] = res['image_path'].map(sorterIndex)
+        res = res.sort_values('rank', ascending=True)
         response_data = dict()
-        response_data['filenames'] = res.tolist()
+        response_data['filenames'] = res['image_path'].tolist()
         return JsonResponse(response_data)
     else:
         return JsonResponse({'filenames': []})
 
-# def query_by_time_range_on_subset(request):
-#     """
-#     data: {
-#         subset: subset,
-#         timeBegin:"07:30",
-#         timeEnd:"08:30"
-#       }
-#     """
-#     if request.method=="POST":
-#         data = json.loads(request.body.decode('utf-8'))
-#         return JsonResponse({'filenames': data['subset'][0::4]})
+def query_by_time_range_on_subset(request):
+    """
+    data: {
+        subset: subset,
+        timeBegin:"07:30",
+        timeEnd:"08:30"
+      }
+    """
+    if request.method=="POST":
+        data = json.loads(request.body.decode('utf-8'))
+        concepts = ServerConfig.concepts
+        time_begin_str = ''.join(data['timeBegin'].split(':'))
+        time_end_str = ''.join(data['timeEnd'].split(':'))
+        res = concepts.loc[(concepts['minute_id'].str.slice(9,13).astype(str)>=time_begin_str) 
+                            & (concepts['minute_id'].str.slice(9,13).astype(str)<=time_end_str)
+                            & (concepts['image_path'].isin(data['subset']))]
+        sorterIndex = dict(zip(data['subset'],range(len(data['subset']))))
+        res['rank'] = res['image_path'].map(sorterIndex)
+        res = res.sort_values('rank', ascending=True)
+        response_data = dict()
+        response_data['filenames'] = res['image_path'].tolist()
+        return JsonResponse(response_data)
+    else:
+        return JsonResponse({'filenames': []})
+
 
 def query_images_before(request):
     """
@@ -148,15 +160,6 @@ def query_similar_images(request, image, num_images):
     response_data['filenames'] = filenames
     return JsonResponse(response_data)
 
-# def query_adjacent_images(request, image, num_images):
-#     ''' image: <folder_name>&<file_name>'''
-#     folder_name,image_name = image.split('&')
-#     filename_df = pd.read_csv(path['filename_folder']+'/'+folder_name+'.csv')
-#     return JsonResponse({'filenames': list(filename_df.iloc[:,1])[500:500+num_images]})
-
-# def query_by_metadata_before(request, place, minute_before):
-
-
 def query_by_metadata(request, places):
     metadata = ServerConfig.metadata
     places = places.split('&')
@@ -164,6 +167,3 @@ def query_by_metadata(request, places):
     response_data = dict()
     response_data['filenames'] = res.tolist()
     return JsonResponse(response_data)
-
-# def query_by_metadata_before(request, place, minute_before):
-#     global metadata, concepts

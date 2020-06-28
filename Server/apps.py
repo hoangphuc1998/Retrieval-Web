@@ -50,7 +50,7 @@ class ServerConfig(AppConfig):
     concepts = concepts[['minute_id', 'image_path']]
     concepts['image_path'] = concepts['image_path'].str.slice(17)
     metadata = metadata.merge(concepts)
-    metadata['date'] = metadata['minute_id'].str.slice(0,8)
-    metadata['hour'] = metadata['minute_id'].str.slice(9,11)
-    metadata['minute'] = metadata['minute_id'].str.slice(11)
+    # metadata['date'] = metadata['minute_id'].str.slice(0,8)
+    # metadata['hour'] = metadata['minute_id'].str.slice(9,11)
+    # metadata['minute'] = metadata['minute_id'].str.slice(11)
     print('Setup done')
