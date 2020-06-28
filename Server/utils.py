@@ -122,19 +122,9 @@ def get_image_set_before_time(concepts, minute_id, minute_before):
     res = set(concepts.loc[(concepts['minute_id'] >= minute_id_before) & (concepts['minute_id'] <= minute_id)]['image_path'])
     return res
 
-def get_similar_images(image_path, similar_feature_folder, similar_filename_folder, device, k=50, start_from=0):
+def get_similar_images(image_path, similar_feature_folder, image_names, reversed_names, device, k=50, start_from=0):
     # Read filename series
     with torch.no_grad():
-        names_series = []
-        reversed_names = []
-        for feature_file in os.listdir(similar_feature_folder):
-            name_file = os.path.join(similar_filename_folder, os.path.splitext(feature_file)[0] + '.csv')
-            filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
-            names_series.append(filenames)
-            reversed_names.append(pd.Series(filenames.index.values, index=filenames))
-        image_names = pd.concat(names_series, ignore_index=True)
-        reversed_names = pd.concat(reversed_names)
-
         subfolder = image_path.split('/')[0]
         path = os.path.join(similar_feature_folder, subfolder + '.pth')
         features = torch.load(path,map_location=device).detach().to(device)

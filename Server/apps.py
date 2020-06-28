@@ -10,10 +10,9 @@ class ServerConfig(AppConfig):
     name = 'Server'
     PARENT_PATH = Path('/media/hoangphuc/Data/ImageCLEF/Server')
     path = {
-        'sajem_feature_folder' : PARENT_PATH/'features/sajem/feature/',
-        'sajem_filename_folder' : PARENT_PATH/'features/sajem/filename/',
-        'resnet_feature_folder': PARENT_PATH/'features/resnet/feature/',
-        'resnet_filename_folder': PARENT_PATH/'features/resnet/filename/',
+        'sajem_feature_folder' : PARENT_PATH/'features/sajem/',
+        'resnet_feature_folder': PARENT_PATH/'features/resnet/',
+        'filename_folder': PARENT_PATH/'features/filename/',
         'option_dict_path' : PARENT_PATH/'models/options.json',
         'text_encoder_path' :  PARENT_PATH/'models/text_encoder.pth',
         'bert_model_path' : PARENT_PATH/'models/bert_model.pth',
@@ -36,7 +35,7 @@ class ServerConfig(AppConfig):
     names_series = []
     reversed_names_series = []
     for feature_file in os.listdir(path['sajem_feature_folder']):
-        name_file = os.path.join(path['sajem_filename_folder'], os.path.splitext(feature_file)[0] + '.csv')
+        name_file = os.path.join(path['filename_folder'], os.path.splitext(feature_file)[0] + '.csv')
         filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
         names_series.append(filenames)
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))

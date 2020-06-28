@@ -153,7 +153,8 @@ def query_similar_images(request, image, num_images):
         return JsonResponse({'dists': [], 'filename': []})
     dists, filenames = get_similar_images(image_path=image_path,
                                             similar_feature_folder=ServerConfig.path['resnet_feature_folder'],
-                                            similar_filename_folder=ServerConfig.path['resnet_filename_folder'],
+                                            image_names=ServerConfig.image_names,
+                                            reversed_names=ServerConfig.reversed_names_series,
                                             device=ServerConfig.device, k=num_images, start_from=0)
     response_data = dict()
     response_data['dists'] = dists.tolist()
