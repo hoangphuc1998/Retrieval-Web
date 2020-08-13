@@ -9,6 +9,7 @@ urlpatterns = [
     path('query_by_metadata/<str:places>', query_by_metadata, name='query_by_metadata'),
     path('query_by_metadata_on_subset', query_by_metadata_on_subset, name='query_by_metadata_on_subset'),
 
+    path('query_by_time_range/<str:begin_time>/<str:end_time>', query_by_time_range, name='query_by_time_range'),
     path('query_by_time_range_on_subset',query_by_time_range_on_subset, name='query_by_time_range_on_subset'),
     path('query_images_before', query_images_before, name='query_images_before'),
 

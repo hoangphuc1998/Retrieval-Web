@@ -54,7 +54,7 @@ def query_by_caption_on_subset(request):
                                                         device=ServerConfig.device,
                                                         max_seq_len=ServerConfig.opt['max_seq_len'],
                                                         dist_func=cosine_dist,
-                                                        k=data['numImages'],
+                                                        k=int(data['numImages']),
                                                         start_from=0)
         response_data = dict()
         response_data['filenames'] = filenames
@@ -109,6 +109,15 @@ def query_by_time_range_on_subset(request):
     else:
         return JsonResponse({'filenames': []})
 
+def query_by_time_range(request, begin_time, end_time):
+    concepts = ServerConfig.concepts
+    time_begin_str = ''.join(begin_time.split(':'))
+    time_end_str = ''.join(end_time.split(':'))
+    res = concepts.loc[(concepts['minute_id'].str.slice(9,13).astype(str)>=time_begin_str) 
+                        & (concepts['minute_id'].str.slice(9,13).astype(str)<=time_end_str)]
+    response_data = dict()
+    response_data['filenames'] = res['image_path'].tolist()
+    return JsonResponse(response_data)
 
 def query_images_before(request):
     """
