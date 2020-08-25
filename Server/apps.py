@@ -8,7 +8,7 @@ import pandas as pd
 import glob
 class ServerConfig(AppConfig):
     name = 'Server'
-    PARENT_PATH = Path('/media/hoangphuc/Data/ImageCLEF/Server')
+    PARENT_PATH = Path('..')
     path = {
         'sajem_feature_folder' : PARENT_PATH/'features/sajem/',
         'resnet_feature_folder': PARENT_PATH/'features/resnet/',
