@@ -156,11 +156,10 @@ def query_images_before(request):
 
 
 def query_similar_images(request, image, num_images):
-    ''' image: <folder_name>&<file_name>'''
-    image_path = image.replace('&', '/')
-    if len(image_path) == 0:
+    ''' image: <file_name>'''
+    if len(image) == 0:
         return JsonResponse({'dists': [], 'filename': []})
-    dists, filenames = get_similar_images(image_path=image_path,
+    dists, filenames = get_similar_images(image_path=image,
                                             similar_feature_folder=ServerConfig.path['resnet_feature_folder'],
                                             image_names=ServerConfig.image_names,
                                             reversed_names=ServerConfig.reversed_names_series,

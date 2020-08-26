@@ -16,7 +16,6 @@ class ServerConfig(AppConfig):
         'option_dict_path' : PARENT_PATH/'models/options.json',
         'text_encoder_path' :  PARENT_PATH/'models/text_encoder.pth',
         'bert_model_path' : PARENT_PATH/'models/bert_model.pth',
-        'metadata_path': PARENT_PATH/'metadata/metadata.csv',
         'concepts_path': PARENT_PATH/'metadata/visual_concepts.csv',
     }
     # Pytorch device
@@ -41,15 +40,4 @@ class ServerConfig(AppConfig):
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))
     image_names = pd.concat(names_series, ignore_index=True)
     reversed_names_series = pd.concat(reversed_names_series)
-    # Query with metadata setup
-    metadata = pd.read_csv(path['metadata_path'])
-    metadata = metadata[['minute_id', 'semantic_name']]
-    metadata = metadata.dropna()
-    concepts = pd.read_csv(path['concepts_path'])
-    concepts = concepts[['minute_id', 'image_path']]
-    concepts['image_path'] = concepts['image_path'].str.slice(17)
-    metadata = metadata.merge(concepts)
-    # metadata['date'] = metadata['minute_id'].str.slice(0,8)
-    # metadata['hour'] = metadata['minute_id'].str.slice(9,11)
-    # metadata['minute'] = metadata['minute_id'].str.slice(11)
     print('Setup done')

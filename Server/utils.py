@@ -125,8 +125,7 @@ def get_image_set_before_time(concepts, minute_id, minute_before):
 def get_similar_images(image_path, similar_feature_folder, image_names, reversed_names, device, k=50, start_from=0):
     # Read filename series
     with torch.no_grad():
-        subfolder = image_path.split('/')[0]
-        path = os.path.join(similar_feature_folder, subfolder + '.pth')
+        path = os.path.join(similar_feature_folder, 'fit.pth')
         features = torch.load(path,map_location=device).detach().to(device)
         ref_feature = features[reversed_names[image_path]].unsqueeze(0)
         # Calculate
