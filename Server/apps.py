@@ -6,9 +6,13 @@ from .utils import *
 import os
 import pandas as pd
 import glob
+
+def getDOW(date_str):
+    return int(datetime.datetime.strptime(date_str, '%Y%m%d').weekday())
+
 class ServerConfig(AppConfig):
     name = 'Server'
-    PARENT_PATH = Path('/media/hoangphuc/Data/ImageCLEF/Server')
+    PARENT_PATH = Path('..')
     path = {
         'sajem_feature_folder' : PARENT_PATH/'features/sajem/',
         'resnet_feature_folder': PARENT_PATH/'features/resnet/',
@@ -52,4 +56,8 @@ class ServerConfig(AppConfig):
     # metadata['date'] = metadata['minute_id'].str.slice(0,8)
     # metadata['hour'] = metadata['minute_id'].str.slice(9,11)
     # metadata['minute'] = metadata['minute_id'].str.slice(11)
+    concepts['dow'] = concepts.minute_id.str.slice(0,8).apply(getDOW)
+    concepts['day'] = concepts.minute_id.str.slice(6,8).astype('int32')
+    concepts['month'] = concepts.minute_id.str.slice(4,6).astype('int32')
+    concepts['year'] = concepts.minute_id.str.slice(0,4).astype('int32')
     print('Setup done')

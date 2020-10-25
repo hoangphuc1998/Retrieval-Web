@@ -109,15 +109,73 @@ def query_by_time_range_on_subset(request):
     else:
         return JsonResponse({'filenames': []})
 
-def query_by_time_range(request, begin_time, end_time):
-    concepts = ServerConfig.concepts
-    time_begin_str = ''.join(begin_time.split(':'))
-    time_end_str = ''.join(end_time.split(':'))
-    res = concepts.loc[(concepts['minute_id'].str.slice(9,13).astype(str)>=time_begin_str) 
-                        & (concepts['minute_id'].str.slice(9,13).astype(str)<=time_end_str)]
-    response_data = dict()
-    response_data['filenames'] = res['image_path'].tolist()
-    return JsonResponse(response_data)
+# def query_by_time_range(request, begin_time, end_time):
+#     concepts = ServerConfig.concepts
+#     time_begin_str = ''.join(begin_time.split(':'))
+#     time_end_str = ''.join(end_time.split(':'))
+#     res = concepts.loc[(concepts['minute_id'].str.slice(9,13).astype(str)>=time_begin_str) 
+#                         & (concepts['minute_id'].str.slice(9,13).astype(str)<=time_end_str)]
+#     response_data = dict()
+#     response_data['filenames'] = res['image_path'].tolist()
+#     return JsonResponse(response_data)
+
+
+
+def query_by_time(request):
+    '''
+    timeBegin, timeEnd: hour and minute (hh:MM)
+    dowBegin, dowEnd: day of week (0-6s, Sunday will be 0)
+    dayBegin, dayEnd: day of month (1-31)
+    monthBegin, monthEnd: month (1-12)
+    yearBegin, yearEnd: year (yyyy)
+    subset: list of previous step's images
+    All: -1 for default
+    
+    '''
+    if request.method == "POST":
+        data = json.loads(request.body.decode('utf-8'))
+        concepts = ServerConfig.concepts
+        query_cons = []
+        if len(data['timeBegin'])>0:
+            time_begin_str = ''.join(data['timeBegin'].split(':'))
+            time_end_str = ''.join(data['timeEnd'].split(':'))
+            query_cons.append(f'(minute_id.str.slice(9,13).astype(\'str\') >= \"{time_begin_str}\")')
+            query_cons.append(f'(minute_id.str.slice(9,13).astype(\'str\') <= \"{time_end_str}\")')
+        # Day of week
+        dowBegin = int(data['dowBegin'])
+        dowEnd = int(data['dowEnd'])
+        if dowBegin >=0 and dowBegin <=6:
+            if dowBegin == dowEnd:
+                query_cons.append(f'(dow=={dowBegin})')
+            else:
+                query_cons.append(f'(dow >= {dowBegin})')
+                query_cons.append(f'(dow <= {dowEnd})')
+        # Day of month
+        dayBegin = int(data['dayBegin'])
+        dayEnd = int(data['dayEnd'])
+        if dayBegin >= 1:
+            query_cons.append(f'(day >= {dayBegin})')
+            query_cons.append(f'(day <= {dayEnd})')
+        # Month
+        monthBegin = int(data['monthBegin'])
+        monthEnd = int(data['monthEnd'])
+        if monthBegin >= 1:
+            query_cons.append(f'(month >= {monthBegin})')
+            query_cons.append(f'(month <= {monthEnd})')
+        # Year
+        yearBegin = int(data['yearBegin'])
+        yearEnd = int(data['yearEnd'])
+        if yearBegin >= 1:
+            query_cons.append(f'(year >= {yearBegin})')
+            query_cons.append(f'(year <= {yearEnd})')
+        # Query
+        image_list = concepts.query(' & '.join(query_cons))['image_path'].tolist()
+        res = image_list
+        if len(data['subset']) > 0:
+            res = [x for x in data['subset'] if x in image_list]
+        return JsonResponse({'filenames': res})
+    else:
+        return JsonResponse({'filenames': []})
 
 def query_images_before(request):
     """
