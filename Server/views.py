@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .utils import *
 from .apps import ServerConfig
 import json
+import numpy as np
 # Create your views here.
 
 def home(request):
@@ -172,7 +173,9 @@ def query_by_time(request):
         image_list = concepts.query(' & '.join(query_cons))['image_path'].tolist()
         res = image_list
         if len(data['subset']) > 0:
-            res = [x for x in data['subset'] if x in image_list]
+            #res = [x for x in data['subset'] if x in image_list]
+            subset = np.array(data['subset'])
+            res = subset[np.isin(subset, np.array(image_list))].tolist()
         return JsonResponse({'filenames': res})
     else:
         return JsonResponse({'filenames': []})
