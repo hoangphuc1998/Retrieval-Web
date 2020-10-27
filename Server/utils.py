@@ -1,5 +1,5 @@
 from .dataset import ImageDataset, FeatureDataset
-from .model import load_text_model, load_transform_model, normalize, l2norm
+from .model import load_text_model, load_transform_model
 import pickle
 import torch
 import pandas as pd
@@ -51,7 +51,7 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 image_names = dict()
 
 def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, 
-                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0, join_images=10000):
+                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0, num_join_images=10000):
     '''
     Return distances and indices of k nearest images of caption
     '''
@@ -77,11 +77,12 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
             dists.append(dist_func(text_features, image_features))
         dists = torch.cat(dists, dim=1)
+        dists = torch.sum(dists, dim=0)
         # Get top 10k images
-        if dists.shape[-1] > join_images:
-            dists_sorted, indices_sorted = torch.topk(dists, join_images, largest=False)
-        else:
-            dists_sorted, indices_sorted = torch.topk(dists, dists.shape[-1], largest=False)
+        # if dists.shape[-1] > num_join_images:
+        #     dists_sorted, indices_sorted = torch.topk(dists, num_join_images, largest=False)
+        # else:
+        dists_sorted, indices_sorted = torch.topk(dists, start_from + k, largest=False)
         # Join between captions
         indices = indices_sorted[start_from:start_from+k]
         dists = dists_sorted[start_from:start_from+k]
@@ -94,14 +95,18 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
 def get_images_from_caption_subset(caption, subset, image_features_folder, image_names, reversed_names, text_model, 
                                     text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
     with torch.no_grad():
-        tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
-        input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
-        attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
+        caption_list = caption.split('&')
+        text_features = []
+        for sentence in caption_list:
+            tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
+            input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
+            attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
 
-        text_feature = text_model(input_ids, attention_mask=attention_mask)
-        text_feature = l2norm(text_feature)
-        text_feature = text_encoder(text_feature)
-        
+            text_feature = text_model(input_ids, attention_mask=attention_mask)
+            text_feature = l2norm(text_feature)
+            text_feature = text_encoder(text_feature)
+            text_features.append(text_feature)
+        text_features = torch.cat(text_features, dim=0)
         # Prepare filename dict
         filename_dict = dict()
         for filename in subset:
@@ -117,9 +122,10 @@ def get_images_from_caption_subset(caption, subset, image_features_folder, image
             feature_file = os.path.join(image_features_folder, subfolder + '.pth')
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
             image_features = image_features[reversed_names[filename_dict[subfolder]].values]
-            dists.append(dist_func(text_feature, image_features))
+            dists.append(dist_func(text_features, image_features))
             sub_image_names+=filename_dict[subfolder]
-        dists = torch.cat(dists, dim=0)
+        dists = torch.cat(dists, dim=1)
+        dists = torch.sum(dists, dim=0)
         sub_image_names = pd.Series(sub_image_names)
         # Get top k images
         #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
