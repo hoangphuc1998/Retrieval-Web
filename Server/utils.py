@@ -7,6 +7,19 @@ import os
 import datetime
 import time
 
+def l2norm(X, eps=1e-9):
+    """L2-normalize columns of X
+    """
+    norm = torch.pow(X, 2).sum(dim=-1, keepdim=True).sqrt()
+    X = torch.div(X, norm + eps)
+    return X
+
+def cosine_sim(query, retrio):
+    """Cosine similarity between all the query and retrio pairs
+    """
+    query, retrio = l2norm(query), l2norm(retrio)
+    return query.mm(retrio.t())
+
 def load_all_feature(feature_file, index_file, device):
     '''
     Load all image features and filenames
@@ -26,7 +39,7 @@ def euclidean_dist(ref_feature, features):
 
 def cosine_dist(ref_feature, features):
     # Calculate cosine distance
-    return 1 - torch.nn.CosineSimilarity()(ref_feature, features)
+    return 1 - cosine_sim(ref_feature, features)
 
 
 def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
@@ -38,34 +51,35 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 image_names = dict()
 
 def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, 
-                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
+                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0, join_images=10000):
     '''
     Return distances and indices of k nearest images of caption
     '''
+    caption_list = caption.split('&')
+    text_features = []
     with torch.no_grad():
-        # Convert to token
-        tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
-        input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
-        attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
-        # Use bert-like model to encode (and normalize)
-        text_feature = l2norm(text_model(input_ids=input_ids, attention_mask=attention_mask))
-        
-        # Transform to common space
-        text_feature = text_encoder(text_feature)
-        # Normalize feature
-        # text_feature = normalize(text_feature).squeeze()
-
+        for sentence in caption_list:
+            # Convert to token
+            tokenizer_res = text_tokenizer.encode_plus(sentence, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
+            input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
+            attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
+            # Use bert-like model to encode (and normalize)
+            text_feature = l2norm(text_model(input_ids=input_ids, attention_mask=attention_mask))
+            
+            # Transform to common space
+            text_feature = text_encoder(text_feature)
+            text_features.append(text_feature)
+        text_features = torch.cat(text_features, dim=0)
         # Iterate throgh all features
         dists = []
         for feature_file in os.listdir(image_features_folder):
             feature_file = os.path.join(image_features_folder, feature_file)
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
-            dists.append(dist_func(text_feature, image_features))
-        dists = torch.cat(dists, dim=0)
-        # Get top k images
-        #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
-        dists_sorted, indices_sorted = torch.topk(dists,start_from + k,largest=False)
-        
+            dists.append(dist_func(text_features, image_features))
+        dists = torch.cat(dists, dim=1)
+        # Get top 10k images
+        dists_sorted, indices_sorted = torch.topk(dists,join_images,largest=False)
+        # Join between captions
         indices = indices_sorted[start_from:start_from+k]
         dists = dists_sorted[start_from:start_from+k]
 

@@ -7,23 +7,6 @@ from transformers import *
 import os
 import time
 
-def normalize(X):
-    '''
-    Normalize input tensor to zero mean and unit variance
-    Input: tensor of size (batch_size, _)
-    Output: normalized tensor with same size of input
-    '''
-    mean = torch.mean(X, dim=1, keepdim=True)
-    std = torch.std(X, dim=1, keepdim=True)
-    return (X - mean) / std
-
-def l2norm(X):
-    """L2-normalize columns of X
-    """
-    norm = torch.pow(X, 2).sum(dim=1, keepdim=True).sqrt()
-    X = torch.div(X, norm)
-    return X
-
 class NeuralNetwork(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_units, hidden_activation='relu', output_activation='relu', use_dropout = False, use_batchnorm=False):
         super().__init__()
