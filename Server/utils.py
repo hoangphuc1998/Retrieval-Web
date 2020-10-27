@@ -78,7 +78,10 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
             dists.append(dist_func(text_features, image_features))
         dists = torch.cat(dists, dim=1)
         # Get top 10k images
-        dists_sorted, indices_sorted = torch.topk(dists,join_images,largest=False)
+        if dists.shape[-1] > join_images:
+            dists_sorted, indices_sorted = torch.topk(dists, join_images, largest=False)
+        else:
+            dists_sorted, indices_sorted = torch.topk(dists, dists.shape[-1], largest=False)
         # Join between captions
         indices = indices_sorted[start_from:start_from+k]
         dists = dists_sorted[start_from:start_from+k]
