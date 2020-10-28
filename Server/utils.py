@@ -77,7 +77,8 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
             dists.append(dist_func(text_features, image_features))
         dists = torch.cat(dists, dim=1)
-        dists = torch.sum(dists, dim=0)
+        eps = 1e-9
+        dists = 1.0 / torch.sum(1.0 / (dists + eps), dim=0)
         # Get top 10k images
         # if dists.shape[-1] > num_join_images:
         #     dists_sorted, indices_sorted = torch.topk(dists, num_join_images, largest=False)
@@ -125,7 +126,8 @@ def get_images_from_caption_subset(caption, subset, image_features_folder, image
             dists.append(dist_func(text_features, image_features))
             sub_image_names+=filename_dict[subfolder]
         dists = torch.cat(dists, dim=1)
-        dists = torch.sum(dists, dim=0)
+        eps = 1e-9
+        dists = 1.0 / torch.sum(1.0 / (dists + eps), dim=0)
         sub_image_names = pd.Series(sub_image_names)
         # Get top k images
         #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
