@@ -137,7 +137,7 @@ def query_by_time(request):
         data = json.loads(request.body.decode('utf-8'))
         concepts = ServerConfig.concepts
         query_cons = []
-        if len(data['timeBegin'])>0:
+        if data['timeBegin']!=-1:
             time_begin_str = ''.join(data['timeBegin'].split(':'))
             time_end_str = ''.join(data['timeEnd'].split(':'))
             query_cons.append(f'(minute_id.str.slice(9,13).astype(\'str\') >= \"{time_begin_str}\")')
@@ -146,11 +146,10 @@ def query_by_time(request):
         dowBegin = int(data['dowBegin'])
         dowEnd = int(data['dowEnd'])
         if dowBegin >=0 and dowBegin <=6:
-            if dowBegin == dowEnd:
-                query_cons.append(f'(dow=={dowBegin})')
-            else:
-                query_cons.append(f'(dow >= {dowBegin})')
-                query_cons.append(f'(dow <= {dowEnd})')
+            dowBegin = (dowBegin - 1) % 7
+            dowEnd = (dowEnd - 1) % 7
+            query_cons.append(f'(dow >= {dowBegin})')
+            query_cons.append(f'(dow <= {dowEnd})')
         # Day of month
         dayBegin = int(data['dayBegin'])
         dayEnd = int(data['dayEnd'])
