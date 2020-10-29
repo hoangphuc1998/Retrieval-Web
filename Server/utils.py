@@ -160,7 +160,7 @@ def get_similar_images(image_path, similar_feature_folder, image_names, reversed
             feature_file = os.path.join(similar_feature_folder, feature_file)
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
             dists.append(cosine_dist(ref_feature, image_features))
-        dists = torch.cat(dists, dim=0)
+        dists = torch.cat(dists, dim=1).squeeze(0)
         dists_sorted, indices_sorted = torch.topk(dists,k + start_from + 1,largest=False)
         
         indices = indices_sorted[start_from + 1:k+start_from + 1]
