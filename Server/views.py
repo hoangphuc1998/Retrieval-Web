@@ -19,7 +19,7 @@ def query_by_caption(request, caption, dist_func, num_images):
     else:
         dist_func = cosine_dist
     dists, filenames = get_images_from_caption(caption=caption,
-                                              image_features_folder=ServerConfig.path['sajem_feature_folder'],
+                                              image_features_folder=ServerConfig.paths['sajem_feature_folder'],
                                               image_names=ServerConfig.image_names,
                                               text_model=ServerConfig.text_model,
                                               text_tokenizer=ServerConfig.text_tokenizer,
@@ -46,7 +46,7 @@ def query_by_caption_on_subset(request):
         data = json.loads(request.body.decode('utf-8'))
         dists, filenames = get_images_from_caption_subset(caption=data['caption'],
                                                         subset=data['subset'],
-                                                        image_features_folder=ServerConfig.path['sajem_feature_folder'],
+                                                        image_features_folder=ServerConfig.paths['sajem_feature_folder'],
                                                         image_names=ServerConfig.image_names,
                                                         reversed_names=ServerConfig.reversed_names_series,
                                                         text_model=ServerConfig.text_model,
@@ -221,7 +221,7 @@ def query_similar_images(request, image, num_images):
     if len(image_path) == 0:
         return JsonResponse({'dists': [], 'filename': []})
     dists, filenames = get_similar_images(image_path=image_path,
-                                            similar_feature_folder=ServerConfig.path['resnet_feature_folder'],
+                                            similar_feature_folder=ServerConfig.paths['resnet_feature_folder'],
                                             image_names=ServerConfig.image_names,
                                             reversed_names=ServerConfig.reversed_names_series,
                                             device=ServerConfig.device, k=num_images, start_from=0)
