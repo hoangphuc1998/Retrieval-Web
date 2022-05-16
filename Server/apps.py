@@ -6,6 +6,7 @@ from .utils import *
 import os
 import pandas as pd
 import glob
+import clip
 
 def getDOW(date_str):
     return int(datetime.datetime.strptime(date_str, '%Y%m%d').weekday())
@@ -14,11 +15,9 @@ class ServerConfig(AppConfig):
     name = 'Server'
     PARENT_PATH = Path('../')
     paths = {
-        'sajem_feature_folder' : PARENT_PATH/'features/sajem/',
+        'img_feature_folder' : PARENT_PATH/'features/clip/',
         'resnet_feature_folder': PARENT_PATH/'features/resnet/',
         'filename_folder': PARENT_PATH/'features/filename/',
-        'option_dict_path' : PARENT_PATH/'models/options.json',
-        'text_encoder_path' :  PARENT_PATH/'models/text_encoder.pth',
         'bert_model_path' : PARENT_PATH/'models/bert_model.pth',
         'metadata_path': PARENT_PATH/'metadata/metadata.csv',
         'concepts_path': PARENT_PATH/'metadata/visual_concepts.csv',
@@ -26,21 +25,18 @@ class ServerConfig(AppConfig):
     # Pytorch device
     device = torch.device('cpu')
 
-    # Load json config file
-    with open(paths['option_dict_path'], 'r') as f:
-        opt = json.load(f)
-
     # Load text model
-    text_model, text_tokenizer = load_text_model(
-        opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, paths['bert_model_path'])
-    # Load text transform model
-    text_encoder = load_transform_model(opt, paths['text_encoder_path'], device)
+    # text_model, text_tokenizer = load_text_model(
+    #     opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, paths['bert_model_path'])
+    # # Load text transform model
+    # text_encoder = load_transform_model(opt, paths['text_encoder_path'], device)
+    model, preprocess = clip.load("ViT-L/14@336px", device=device)
     # Load SAJEM filenames
     names_series = []
     reversed_names_series = []
-    for feature_file in os.listdir(paths['sajem_feature_folder']):
+    for feature_file in os.listdir(paths['img_feature_folder']):
         name_file = os.path.join(paths['filename_folder'], os.path.splitext(feature_file)[0] + '.csv')
-        filenames = pd.Series(pd.read_csv(name_file,header=None, index_col=0).iloc[:,0])
+        filenames = pd.Series(pd.read_csv(name_file,header=0, index_col=0).iloc[:,0])
         names_series.append(filenames)
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))
     image_names = pd.concat(names_series, ignore_index=True)
@@ -60,5 +56,5 @@ class ServerConfig(AppConfig):
     concepts['day'] = concepts.minute_id.str.slice(6,8).astype('int32')
     concepts['month'] = concepts.minute_id.str.slice(4,6).astype('int32')
     concepts['year'] = concepts.minute_id.str.slice(0,4).astype('int32')
-    print("Number of images: " + str(len(concepts)))
+    print("Number of images: " + str(len(image_names)))
     print('Setup done')

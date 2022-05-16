@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import datetime
 import time
+import clip
 
 def l2norm(X, eps=1e-9):
     """L2-normalize columns of X
@@ -50,32 +51,24 @@ def k_nearest_neighbors(ref_feature, features, k=10, dist_fn=cosine_dist):
 # stored_sorted = dict()
 image_names = dict()
 
-def get_images_from_caption(caption, image_features_folder, image_names, text_model, text_tokenizer, 
-                            text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0, num_join_images=10000):
+def get_images_from_caption(caption, image_features_folder, image_names, model, device, dist_func=cosine_dist, k=50,start_from=0):
     '''
     Return distances and indices of k nearest images of caption
     '''
     caption_list = caption.split('&')
     text_features = []
     with torch.no_grad():
-        for sentence in caption_list:
-            # Convert to token
-            tokenizer_res = text_tokenizer.encode_plus(sentence, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
-            input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
-            attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
-            # Use bert-like model to encode (and normalize)
-            text_feature = l2norm(text_model(input_ids=input_ids, attention_mask=attention_mask))
-            
-            # Transform to common space
-            text_feature = text_encoder(text_feature)
-            text_features.append(text_feature)
-        text_features = torch.cat(text_features, dim=0)
+        text_features = torch.cat([clip.tokenize(sentence) for sentence in caption_list]).to(device)
+        text_features = model.encode_text(text_features)
+        text_features /= text_features.norm(dim=-1, keepdim=True)
         # Iterate throgh all features
         dists = []
         for feature_file in os.listdir(image_features_folder):
             feature_file = os.path.join(image_features_folder, feature_file)
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
-            dists.append(dist_func(text_features, image_features))
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            image_features = image_features.float()
+            dists.append(text_features @ image_features.T)
         dists = torch.cat(dists, dim=1)
         eps = 1e-9
         dists = 1.0 / torch.sum(1.0 / (dists + eps), dim=0)
@@ -83,7 +76,7 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
         # if dists.shape[-1] > num_join_images:
         #     dists_sorted, indices_sorted = torch.topk(dists, num_join_images, largest=False)
         # else:
-        dists_sorted, indices_sorted = torch.topk(dists, start_from + k, largest=False)
+        dists_sorted, indices_sorted = torch.topk(dists, start_from + k, largest=True)
         # Join between captions
         indices = indices_sorted[start_from:start_from+k]
         dists = dists_sorted[start_from:start_from+k]
@@ -93,21 +86,12 @@ def get_images_from_caption(caption, image_features_folder, image_names, text_mo
         filenames = image_names.iloc[indices].tolist()
         return dists, filenames
 
-def get_images_from_caption_subset(caption, subset, image_features_folder, image_names, reversed_names, text_model, 
-                                    text_tokenizer, text_encoder, device, max_seq_len = 64, dist_func=cosine_dist, k=50,start_from=0):
+def get_images_from_caption_subset(caption, subset, image_features_folder, image_names, reversed_names, model, device, dist_func=cosine_dist, k=50,start_from=0):
     with torch.no_grad():
         caption_list = caption.split('&')
-        text_features = []
-        for sentence in caption_list:
-            tokenizer_res = text_tokenizer.encode_plus(caption, add_special_tokens=True, pad_to_max_length=True, max_length=max_seq_len, return_attention_mask=True, return_token_type_ids=False)
-            input_ids = torch.tensor([tokenizer_res['input_ids']]).to(device)
-            attention_mask = torch.tensor([tokenizer_res['attention_mask']]).to(device)
-
-            text_feature = text_model(input_ids, attention_mask=attention_mask)
-            text_feature = l2norm(text_feature)
-            text_feature = text_encoder(text_feature)
-            text_features.append(text_feature)
-        text_features = torch.cat(text_features, dim=0)
+        text_features = torch.cat([clip.tokenize(sentence) for sentence in caption_list]).to(device)
+        text_features = model.encode_text(text_features)
+        text_features /= text_features.norm(dim=-1, keepdim=True)
         # Prepare filename dict
         filename_dict = dict()
         for filename in subset:
@@ -122,8 +106,10 @@ def get_images_from_caption_subset(caption, subset, image_features_folder, image
         for subfolder in filename_dict:
             feature_file = os.path.join(image_features_folder, subfolder + '.pth')
             image_features = torch.load(feature_file,map_location=device).detach().to(device)
+            image_features /= image_features.norm(dim=-1, keepdim=True)
             image_features = image_features[reversed_names[filename_dict[subfolder]].values]
-            dists.append(dist_func(text_features, image_features))
+            image_features = image_features.float()
+            dists.append(text_features @ image_features.T)
             sub_image_names+=filename_dict[subfolder]
         dists = torch.cat(dists, dim=1)
         eps = 1e-9
@@ -131,7 +117,7 @@ def get_images_from_caption_subset(caption, subset, image_features_folder, image
         sub_image_names = pd.Series(sub_image_names)
         # Get top k images
         #dists, indices = k_nearest_neighbors(text_feature, image_features, dist_fn=dist_func, k=k)
-        dists_sorted, indices_sorted = torch.topk(dists,k+start_from,largest=False)
+        dists_sorted, indices_sorted = torch.topk(dists,k+start_from,largest=True)
         
         indices = indices_sorted[start_from:k+start_from]
         dists = dists_sorted[start_from:k+start_from]

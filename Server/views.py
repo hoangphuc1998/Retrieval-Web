@@ -19,13 +19,10 @@ def query_by_caption(request, caption, dist_func, num_images):
     else:
         dist_func = cosine_dist
     dists, filenames = get_images_from_caption(caption=caption,
-                                              image_features_folder=ServerConfig.paths['sajem_feature_folder'],
+                                              image_features_folder=ServerConfig.paths['img_feature_folder'],
                                               image_names=ServerConfig.image_names,
-                                              text_model=ServerConfig.text_model,
-                                              text_tokenizer=ServerConfig.text_tokenizer,
-                                              text_encoder=ServerConfig.text_encoder,
+                                              model=ServerConfig.model,
                                               device=ServerConfig.device,
-                                              max_seq_len=ServerConfig.opt['max_seq_len'],
                                               dist_func=dist_func,
                                               k=num_images,
                                               start_from=0)
@@ -46,14 +43,11 @@ def query_by_caption_on_subset(request):
         data = json.loads(request.body.decode('utf-8'))
         dists, filenames = get_images_from_caption_subset(caption=data['caption'],
                                                         subset=data['subset'],
-                                                        image_features_folder=ServerConfig.paths['sajem_feature_folder'],
+                                                        image_features_folder=ServerConfig.paths['img_feature_folder'],
                                                         image_names=ServerConfig.image_names,
                                                         reversed_names=ServerConfig.reversed_names_series,
-                                                        text_model=ServerConfig.text_model,
-                                                        text_tokenizer=ServerConfig.text_tokenizer,
-                                                        text_encoder=ServerConfig.text_encoder,
+                                                        model=ServerConfig.model,
                                                         device=ServerConfig.device,
-                                                        max_seq_len=ServerConfig.opt['max_seq_len'],
                                                         dist_func=cosine_dist,
                                                         k=int(data['numImages']),
                                                         start_from=0)
