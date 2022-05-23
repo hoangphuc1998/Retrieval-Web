@@ -18,7 +18,7 @@ class ServerConfig(AppConfig):
         'img_feature_folder' : PARENT_PATH/'features/clip/',
         'resnet_feature_folder': PARENT_PATH/'features/resnet/',
         'filename_folder': PARENT_PATH/'features/filename/',
-        'bert_model_path' : PARENT_PATH/'models/bert_model.pth',
+        'model_path' : PARENT_PATH/'model/ViT-L-14-336px.pt',
         'metadata_path': PARENT_PATH/'metadata/metadata.csv',
         'concepts_path': PARENT_PATH/'metadata/visual_concepts.csv',
     }
@@ -30,13 +30,13 @@ class ServerConfig(AppConfig):
     #     opt['text_model_type'], opt['text_model_pretrained'], opt['output_bert_model'], device, paths['bert_model_path'])
     # # Load text transform model
     # text_encoder = load_transform_model(opt, paths['text_encoder_path'], device)
-    model, preprocess = clip.load("ViT-L/14@336px", device=device)
+    model, preprocess = clip.load(paths["model_path"], device=device)
     # Load SAJEM filenames
     names_series = []
     reversed_names_series = []
     for feature_file in os.listdir(paths['img_feature_folder']):
         name_file = os.path.join(paths['filename_folder'], os.path.splitext(feature_file)[0] + '.csv')
-        filenames = pd.Series(pd.read_csv(name_file,header=0, index_col=0).iloc[:,0])
+        filenames = pd.Series(pd.read_csv(name_file, header=None, index_col=0).iloc[:,0])
         names_series.append(filenames)
         reversed_names_series.append(pd.Series(filenames.index.values, index=filenames))
     image_names = pd.concat(names_series, ignore_index=True)
